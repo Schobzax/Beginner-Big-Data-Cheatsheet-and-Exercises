@@ -1,5 +1,25 @@
 # Cosas a hacer
 
-- [ ] Testing
-- [ ] More testing
-- [ ] Even more testing
+- [ ] Día 1 - Hadoop
+- [ ] Día 2 - Hive
+- [ ] Día 2 - Impala
+- [ ] Día 3 - Pig
+- [ ] Resumen - Hadoop
+- [ ] Resumen - Hive
+- [ ] Resumen - Impala
+- [ ] Apunte - Hive vs. Impala
+- [ ] Resumen - Pig
+- [ ] Día 3 - Sqoop
+- [ ] Resumen - Sqoop
+- [ ] Día 3 - Flume
+- [ ] Resumen - Flume
+- [ ] Resumen Tocho Spark
+- [ ] Ejercicios Spark Módulo 1
+- [ ] Ejercicios Spark Módulo 2
+- [ ] Ejercicios Spark Módulo 4
+- [ ] Ejercicios Spark Módulo 4.1
+- [ ] Ejercicios Spark Módulo 5
+- [ ] Ejercicios Spark Módulo 6
+- [ ] Snippets útiles
+  - [ ] Easy Word Count
+  - [ ] El tema del swap, sort, swap by ordenador
