@@ -1,10 +1,10 @@
 # Cosas a hacer
 
-- [ ] Día 1 - Hadoop
+- [x] Día 1 - Hadoop
 - [ ] Día 2 - Hive
 - [ ] Día 2 - Impala
 - [ ] Día 3 - Pig
-- [ ] Resumen - Hadoop
+- [x] Resumen - Hadoop
 - [ ] Resumen - Hive
 - [ ] Resumen - Impala
 - [ ] Apunte - Hive vs. Impala
