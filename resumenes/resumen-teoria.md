@@ -67,3 +67,41 @@ Expandiremos sobre algunas de estas herramientas más adelante.
 
 ## Hive
 
+**Hive** es una infraestructura para almacenaje y consulta de datos basada en Hadoop. Usa un lenguaje similar a SQL-92 llamado HQL.
+
+- +Buena escalabilidad
+- +Tolerancia a fallos
+- -Alta latencia (procesamiento por lotes)
+- -No ofrece consultas en tiempo real.
+- -Mal rendimiento con sistemas tradicionales.
+
+*Nota personal*: Si estás familiarizado con el uso de herramientas de bases de datos relacionales en consola, como MySQL, **es extremadamente parecido**.
+
+### Definiciones
+
+* Tablas: Unidades de datos homogéneas que comparten esquema.
+* Particiones: Cada tabla puede tener claves de particionado que determinan cómo se almacenan, para optimización de consultas.
+* Buckets: Los datos dentro de cada partición pueden dividirse en *buckets* según el valor de una función de dispersión. Optimizan *joins*.
+
+### Creación de tablas
+
+La creación de tablas tiene una serie de consideraciones adicionales:
+
+```
+CREATE [EXTERNAL] TABLE ejemplo (
+  ejemplo_campo TYPE COMMENT 'Campo de ejemplo' --Descripción del campo
+  otro_campo TYPE
+) COMMENT 'Tabla de ejemplo' -- Descripción de tabla
+PARTITIONED BY(abc STRING) -- Particionada por el campo "abc"
+CLUSTERED BY (campo) -- Agrupada en buckets por el campo "ejemplo_campo"
+SORTED BY (otro_campo) -- Ordenado dentro del bucket por el campo "otro_campo"
+INTO x BUCKETS -- En un número de buckets o clusters.
+ROW FORMAT DELIMITED -- El formato de las filas consiste en campos separados por un delimitador
+FIELDS TERMINATED BY ',' -- En este caso, dicho delimitador será una coma
+COLLECTION ITEMS TERMINATED BY ';' -- El delimitador de colecciones (campos array, campos mapa, campos struct, etcétera) será el punto y coma
+MAP KEYS TERMINATED BY '.' -- El delimitador de maps será el punto.
+LINES TERMINATED BY '*' -- El delimitador de fin de línea es el asterisco (por defecto es el salto de línea, \n)
+STORED AS SEQUENCEFILE; -- El formato de almacenamiento es SEQUENCEFILE
+[LOCATION '/dentro/del/hdfs] -- Una tabla externa (EXTERNAL) necesita especificar su localización en el hdfs.
+```
+El resto de comandos son similares al uso de un motor de base de datos por consola, con la excepción de las cuestiones de carga de datos, que funcionan como un `INSERT INTO tabla SELECT * FROM otratabla`.
