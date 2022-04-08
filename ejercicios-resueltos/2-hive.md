@@ -1,6 +1,6 @@
 # Ejercicios Hive
 
-Por convención, las palabras reservadas se escribirán en mayúsculas. Esto se una convención y no es necesario, pero ayuda a distinguirlo de valores variables.
+Por convención, las palabras reservadas se escribirán en mayúsculas. Esto es una convención y no es necesario, pero ayuda a distinguirlo de valores variables.
 
 1. El código para entrar a hive es el siguiente:
     ```

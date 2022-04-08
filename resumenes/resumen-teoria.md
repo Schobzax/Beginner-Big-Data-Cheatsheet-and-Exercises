@@ -139,3 +139,17 @@ Esta información puede mostrarse mediante `SHOW TABLE STATS <nombre_tabla>` o `
 ### Comandos
 
 Igual que Hive: similares a SQL.
+
+## Pig
+
+**Pig** es cerdo en inglés. También es una herramienta similar a Hive o Impala, excepto que usa su propio lenguaje: el **Pig Latin**.
+
+**Pig Latin** es un lenguaje de flujo de datos, representado por una secuencia de instrucciones.
+
+Para más información, consultar la chuletilla de cerdo. Perdón, la [cheat sheet de Pig](../apuntes-snippets/hadoop-cheatsheet.md#pig-y-pig-latin).
+
+## Scoop
+TODO;
+
+## Flume
+TODO;
