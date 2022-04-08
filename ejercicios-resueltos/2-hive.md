@@ -183,3 +183,122 @@ Hay mucho que desengranar aquí. Vamos paso a paso.
 Lo primero es que se ejecut la salida estándar de un Job de Hadoop, algo que no ocurre en los casos anteriores.
 
 Después se nos indica una URL. Como ya ha terminado el trabajo, no podemos acceder a la misma, pero mediante la página principal de nuestras aplicaciones hadoop ((quickstart.cloudera:8088, que nos redirige a /cluster) ahí aparece el trabajo que acabamos de terminar en el historial. Entrando en él, nos aparece su nombre (la consulta que hemos realizado), el usuario que lo ha ejecutado, la fecha y hora de ejecución, comienzo, finalización, el tiempo que ha tardado en total y en sus partes, así como otras cuestiones.
+
+11. Observamos que aparece un valor NULL como resultado en la query anterior. ¿Por qué? ¿Cómo los eliminarías?
+    - Aparece un NULL porque una de las filas de la tabla tiene NULL en todas sus columnas.
+    - En cuanto a la eliminación, consistiría en eliminar el valor NULL de la tabla como tal.
+
+12. Insertar en la tabla la siguiente fila (1.0,3.2,4.3,5.7,"Iris-virginica")
+    ```
+    hive> INSERT INTO iris VALUES (1.0,3.2,4.3,5.7,'Iris-virginica');
+    Query ID = cloudera_2022040809199_28b82294-f690-4a0a-a3ba-05e3c7d0b5c7
+    Total jobs = 3
+    Launching Job 1 out of 3
+    Number of reduce tasks is set to 0 since there's no erduce operator
+    Starting Job = job_1649163935098_0003, Tracking URL = http://quickstart.cloudera:8088/proxy/application_1649163935098_0003/
+    Kill Command = /usr/lib/hadoop/binHadoop job  -kill job_1649163935098_0003
+    Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 0
+    2022-04-08 09:19:29,438 Stage-1 map = 0%,  reduce = 0%
+    2022-04-08 09:19:35,932 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 1.39 sec
+    MapReduce Total cumulative CPU time: 1 seconds 390 msec
+    Ended Job = job_1649163935098_0003
+    Stage-4 is selected by condition resolver.
+    Stage-3 is filtered out by condition resolver.
+    Stage-5 is filtered out by condition resolver.
+    Moving data to: hdfs://quickstart.cloudera:8020/user/hive/warehouse/repe_curso.db/iris/.hive-staging_hive_2022-04-08_09-19-22_084_9157776976457183486-/-ext-10000
+    Loading data to table repe_curso.iris
+    Table repe_curso.iris stats: [numFiles=2, numRows=1, totalSize=4582, rawDataSize=30]
+    MapReduce Jobs Launched:
+    Stage-Stage-1: Map: 1  Cumulative CPU: 1.39 sec  HDFS Read: 4701 HDFS Write: 102 SUCCESS
+    Total MapReduce CPU Time Spent: 1 seconds 390 msec
+    OK
+    Time taken: 16.241 seconds
+    ```
+Como podemos ver, insertar una tupla también lanza un trabajo completo.
+
+13. Contar el número de ocurrencias de cada clase.
+    ```
+    hive> SELECT clase, COUNT(*) FROM iris GROUP BY clase;
+    Query ID = cloudera_20220408092525_b859d149-9c8f-4c43-9138-b5d7678d609d
+    Total jobs = 1
+    Launching Job 1 out of 1
+    Number of reduce tasks not specified. Estimated from input data size: 1
+    In order to change the average load for a reducer (in bytes):
+    set hive.exec.reducers.bytes.per.reducer=<number>
+    In order to limit the maximum number of reducers:
+    set hive.exec.reducers.max=<number>
+    In order to set a constant number of reducers:
+    set mapreduce.job.reduces=<number>
+    Starting Job = job_1649163935098_0004, Tracking URL = http://quickstart.cloudera:8088/proxy/application_1649163935098_0004/
+    Kill Command = /usr/lib/hadoop/bin/hadoop job  -kill job_1649163935098_0004
+    Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+    2022-04-08 09:25:41,386 Stage-1 map = 0%,  reduce = 0%
+    2022-04-08 09:25:47,755 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 0.86 sec
+    2022-04-08 09:25:56,300 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 0.86 sec
+    MapReduce Total cumulative CPU time: 2 seconds 30 msec
+    Ended Job = job_1649163935098_0004
+    MapReduce Jobs Launched: 
+    Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 2.03 sec   HDFS Read: 12856 HDFS Write: 57 SUCCESS
+    Total MapReduce CPU Time Spent: 2 seconds 30 msec
+    OK
+    NULL	1
+    Iris-setosa	50
+    Iris-versicolor	50
+    Iris-virginica	51
+    Time taken: 24.238 seconds, Fetched: 4 row(s)
+    ```
+Nótese la línea que dice `Number of reduce tasks not specified. Estimated from input data size: 1` y cómo al no determinar un número de *reducers* el propio sistema establece un número en función del tamaño de los datos.
+    
+A partir de ahora se ha visto el proceso, así que para los últimos ejercicios se omitirá la parte donde se crea y ejecuta el Job.
+
+14. Seleccionar las clases que tengan más de 45 ocurrencias
+    ```
+    hive> SELECT clase, COUNT(*)
+        >   FROM iris
+        >  GROUP BY clase
+        > HAVING COUNT(*) > 45;
+    [...]
+    OK
+    Iris-setosa     50
+    Iris-versicolor 50
+    Iris-virginica  51 --Era 50, pero insertamos una tupla.
+    Time taken: 22.656 seconds, Fetched: 3 row(s)
+    ```
+
+15. Utilizando la función LEAD, ejecutar una query que devuelva la clase, p_length y el LEAD de p_length con Offset=1 y Default_Value = 0, paricionado por clase y ordenado por p_length.
+    ```
+    hive> SELECT clase,
+        >        p_length,
+        >        LEAD(p_length,1,0) OVER (PARTITION BY clase ORDER by p_length) as Lead
+        >        FROM iris;
+    --LEAD trae el valor anterior a este, y PARTITION BY parte la tabla en cachos para que se aplique el LEAD de forma separada.
+    --Demostración del resultado:
+    [...]
+    Iris-versicolor 4.9    4.9
+    Iris-versicolor 4.9    5.0
+    Iris-versicolor 5.0    5.1
+    Iris-versicolor 5.1    0.0
+    Iris-virginica  4.3    4.5
+    Iris-virginica  4.5    4.8
+    Iris-virginica  4.8    4.8
+    [...]
+    Time taken: 23.588 seconds, Fetched: 152 row(s)
+    ```
+
+16. Utilizando funciones de ventanas, seleccionar la clase, p_length, s_length, p_width, el número de valores distintos de p_length en todo el dataset, elvalor máximo de s_length por clase y la media de p_width por clase, ordenado por clase y s_length de manera descendiente.
+    
+    Esta es simplemente una consulta muy compleja sin ninguna complicación mayor. Son necesarias particiones.
+    ```
+    hive> SELECT clase,
+        >        p_length,
+        >        s_length,
+        >        p_width,
+        >        COUNT(p_length) OVER (PARTITION BY p_length) AS pl_ct,
+        >        MAX(s_length) OVER (PARTITION BY clase) AS sl_mx,
+        >        AVG(p_width) OVER (PARTITION BY clase) AS pw_av
+        >        FROM iris
+        >        ORDER BY clase, s_length desc;
+    --En este caso cabe destacar que se ejecutan tres trabajos. Es fácil deducir, viendo los campos que sacamos de la consulta, el motivo.
+    [datos]
+    Time taken: 67.365 seconds, Fetched: 152 row(s)
+    ```
