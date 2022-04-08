@@ -105,3 +105,37 @@ STORED AS SEQUENCEFILE; -- El formato de almacenamiento es SEQUENCEFILE
 [LOCATION '/dentro/del/hdfs] -- Una tabla externa (EXTERNAL) necesita especificar su localización en el hdfs.
 ```
 El resto de comandos son similares al uso de un motor de base de datos por consola, con la excepción de las cuestiones de carga de datos, que funcionan como un `INSERT INTO tabla SELECT * FROM otratabla`.
+
+Para una información más sucinta, resumida y comparada con Impala, ver [El documento que los compara.](../apuntes-snippets/hive-impala-diff.md)
+
+## Impala
+
+**Impala** es un motor SQL de gran rendimiento gracias al procesamiento en paralelo de grandes volúmenes de datos.
+
+Tiene **muy baja latencia**, gracias a que los servicios que ejecuta se inician con el propio motor, en lugar de antes de cada consulta.
+
+La ventaja de usar Impala, además de las ya mencionadas, es que es más fácil y rápido que usar MapReduce. Tan solo hay que ver ejemplos de código, y vemos que algo que en Java puede tomar docenas de líneas, en SQL apenas es un puñado.
+
+* Hay que destacar que Hive soporta ciertas características que Impala aún no ha implementado, como DATE, JSON, algunas funciones complejas de agregación, sampling, vistas laterales, más de un DISTINCT por consulta, etc.
+
+Impala funciona en el cluster de la siguiente manera: **cada nodo posee un *daemon* Impala**, que se encarga de planificar la query cuando el cliente se conecta con el *daemon* local, "coordinador". Este pide una lista de *daemons* Impala activos, guardada en una lista que se va guardando periodicamente, y distribuye la query entre los que están disponibles.
+
+Pero lo que distingue a Impala de otros sistemas similares es la **caché de metadatos**. Los metadatos se cachean al inicio de la sesión y solo se cambian cuando hay cambios en el *metastore* (cambios en los datos o estructura de la Base de Datos, para entendernos). Esta caché agiliza mucho el trabajo de Impala.
+
+El problema: no registra todos los cambios como cambios en los metadatos. Algunos cambios, como los realizados mediante Hive, Pig, Hue, o datos a pelo en el HDFS, no son registrados, y por lo tanto la caché deja de ser válida. Necesita un **refresco manual** de los datos, para lo cual hay operaciones concretas que se pueden realizar.
+
+### Tolerancia a fallos
+
+Hive tiene tolerancia a fallos porque su procesamiento se basa en MapReduce. Si un nodo falla, otro puede hacerse cargo de esa parte.
+
+Sin embargo, Impala no posee tal tolerancia a fallos. Si un nodo falla durante la ejecución, falla la ejecución completa. Lo único que se puede hacer es volver a lanzar la query.
+
+### Optimización
+
+Hay un comando concreto, llamado `COMPUTE STATS <nombre_tabla>`, que permite informar a Impala de las características de las tablas involucradas en una consulta. Esto optimiza la ejecución de la consulta. Se recomienda su uso justo después de cargar las tablas o cuando se modifique una tabla en más de un 20%.
+
+Esta información puede mostrarse mediante `SHOW TABLE STATS <nombre_tabla>` o `SHOW COLUMN STATS <nombre_tabla>`;
+
+### Comandos
+
+Igual que Hive: similares a SQL.

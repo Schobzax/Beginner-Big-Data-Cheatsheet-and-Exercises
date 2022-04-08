@@ -37,3 +37,9 @@ Es interesante también destacar que la carpeta desde la que se empieza tiene co
 
 ***IMPORTANTE***: Usar `LOAD DATA` borra el archivo de HDFS.
 * Exportación de datos de tabla: `INSERT OVERWRITE [LOCAL] DIRECTORY '<ruta/archivo>' SELECT campos, varios FROM tabla [WHERE condicion]` Para guardar el resultado de una consulta en un archivo local. Para condiciones, ver importación de datos a tabla.
+
+## Impala
+
+* Entrada: `impala-shell` para entrar a la consola de Impala. El resto es similar a Hive.
+* Cabe destacar que también se accede a las bases de datos disponibles en HDFS (me aparece cursohivedb, por ejemplo)
+* Definitivamente es más rápido.
