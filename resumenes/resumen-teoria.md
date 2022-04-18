@@ -148,8 +148,21 @@ Igual que Hive: similares a SQL.
 
 Para más información, consultar la chuletilla de cerdo. Perdón, la [cheat sheet de Pig](../apuntes-snippets/hadoop-cheatsheet.md#pig-y-pig-latin).
 
-## Scoop
-TODO;
+## Sqoop
+Sqoop es una herramienta para transferir datos entre RDBMs y Hadoop. Ese es su objetivo fundamental y su *raison d'être*, su propósito, su alfa y su omega.
+
+Dispone de varias opciones para transferir una, parte de una o más de una tabla, con soporte para cláusula `WHERE`.
+
+Usa MapReduce para la importación de datos. Por defecto usa cuatro Maps pero puede configurarse o determinarse en ejecución. Además, posee paralelización y tolerancia a fallos. Los datos se van importando registro a registro. Utiliza JDBC.
+
+Al importar mediante MapReduce los archivos se guardanen HDFS con el formato `part-*.0*`. Puede usarse para importaciones incrementales:
+* La primera vez que se ejecuta el `import` cargas todos los datos de una tabla.
+* La segunda y consiguientes veces se cargan los datos creados desde la última importación.
+
+Hay conectores específicos para cada motor. Por otro lado, está el modo **direct**, que conecta con la base de datos sin pasar por JDBC siendo más rápido.
+
+El resto es sintaxis, que básicamente es `sqoop herramienta [opciones]`. Para más información acudir al [cheatsheet](../apuntes-snippets/hadoop-cheatsheet.md#sqoop).
 
 ## Flume
 TODO;
+ojo a los tres apartados de source sink y el otro.

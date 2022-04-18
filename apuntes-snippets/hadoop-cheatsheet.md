@@ -123,3 +123,34 @@ spammers = FILTER senders BY email_addr MATCHES '.*@example|.com$';
 ### Salir
 
 * `quit;` para salir.
+
+## Sqoop
+
+* `sqoop help [<comando>]` - Por defecto mostrará una lista de comandos. Si pones un comando te mostrará la ayuda, opciones y explicación de ese comando.
+
+### Importación
+* `sqoop import --username user --password pass --connect jdbc:mysql://database.example.com/personal [--table empleados]/[--where "condicion"]/[--query "SELECT * FROM tabla"] -m x --target-dir XXX`
+  * `--username` para poner el usuario de acceso a la base de datos.
+  * `--password` para poner la contraseña de acceso a la base de datos en texto plano.
+    * Puede hacerse `--username user -p`, que te pedirá la contraseña por consola en lugar de escribirla en texto plano (es más seguro).
+    * También puede usarse `--password-alias`, señalando un archivo donde está guardada la contraseña. 
+  * `--connect` señala la cadena de conexión, el motor y la base de datos donde conectarse.
+  * `--table` señala la tabla de la base de datos conectada de donde sacar los datos a importar.
+  * `--where` es una condición SQL a cumplir por los datos que se importarán. Por ejemplo, `where "edad>35"` o cosas así.
+  * `--query` permite hacer una consulta SQL más compleja (usando JOIN y cosas así) no limitada por los confines de un WHERE.
+  * O se usa `table` y opcionalmente `where` o se usa `query`.
+  * `--target-dir` señala el directorio objetivo donde se guardará el archivo `part-*.0*` donde estarán guardados los datos.
+  * `-m` configura un número `x` de Mappers para este `import.`
+El resto de opciones tratan con temas de fuente, configuración de NULL, particiones, etcétera.
+
+### Exportación
+* `sqoop export` - Permite exportar datos de HDFS e insertarlos en una tabla existente de una RDBMS
+
+### Compatibilidad con Hive
+Sqoop facilita importar directamente a Hive sin pasar por HDFS.
+* `sqoop import <argumentos> --hive-import` importa directamente a hive.
+  * Si la tabla ya existe se puede añadir la opción `-hive-overwrite` para sobreescribirla.
+  * Sqoop a continuación genera un script HQL para crear la tabla si no exite.
+  * Por último se genera uan instrucción de carga para mover los datos al warehouse de hive.
+
+Las opciones son similares y tratan con diversas cuestiones de configuración, particiones, reemplazos de carácteres especiales, etcétera.

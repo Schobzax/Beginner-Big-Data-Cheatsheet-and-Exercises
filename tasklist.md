@@ -3,14 +3,14 @@
 - [x] Día 1 - Hadoop
 - [x] Día 2 - Hive
 - [x] Día 2 - Impala
-- [ ] Día 3 - Pig
+- [x] Día 3 - Pig
 - [x] Resumen - Hadoop
 - [x] Resumen - Hive
 - [x] Resumen - Impala
-- [ ] Apunte - Hive vs. Impala
-- [ ] Resumen - Pig
-- [ ] Día 3 - Sqoop
-- [ ] Resumen - Sqoop
+- [x] Apunte - Hive vs. Impala
+- [x] Resumen - Pig
+- [x] Día 3 - Sqoop
+- [x] Resumen - Sqoop
 - [ ] Día 3 - Flume
 - [ ] Resumen - Flume
 - [ ] Resumen Tocho Spark
