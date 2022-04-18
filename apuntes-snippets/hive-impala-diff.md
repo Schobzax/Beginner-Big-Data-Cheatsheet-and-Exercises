@@ -47,5 +47,4 @@ En términos monetarios, es importante destacar cómo funciona cada servicio int
 **Hive**: Mejor para trabajos pesados de ETL. Se busca robustez frente a velocidad. Tolerancia a fallos.
 
 ## Apunte extra: ¿Y Pig qué?
-Pues Pig es una cosa que está ahí y que es cochino en inglés.
-(Por arreglar cuando repase Pig)
+Pig es una herramienta parecida a Hive pero que usa su lenguaje propio, **Pig Latin**. Para más información se puede ver el [Resumen de teoría](../resumenes/resumen-teoria.md#pig). Realmente no tiene mayor relación.
