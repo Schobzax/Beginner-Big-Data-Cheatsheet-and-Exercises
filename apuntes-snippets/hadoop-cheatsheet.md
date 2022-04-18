@@ -204,3 +204,5 @@ Sobre todo temas de configuración más usuales.
 * Morphline: Transformación predefinida en un fichero de configuración de la transformación.
 * Search&Replace: Busca y reemplaza una cadena en el evento.
 * Regex: Lo mismo pero con expresiones regulares.
+
+Para más información mirar los ejercicios resueltos de flume.
