@@ -11,8 +11,8 @@
 - [x] Resumen - Pig
 - [x] Día 3 - Sqoop
 - [x] Resumen - Sqoop
-- [ ] Día 3 - Flume
-- [ ] Resumen - Flume
+- [x] Día 3 - Flume
+- [x] Resumen - Flume
 - [ ] Resumen Tocho Spark
 - [ ] Ejercicios Spark Módulo 1
 - [ ] Ejercicios Spark Módulo 2

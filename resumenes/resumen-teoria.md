@@ -164,5 +164,34 @@ Hay conectores específicos para cada motor. Por otro lado, está el modo **dire
 El resto es sintaxis, que básicamente es `sqoop herramienta [opciones]`. Para más información acudir al [cheatsheet](../apuntes-snippets/hadoop-cheatsheet.md#sqoop).
 
 ## Flume
-TODO;
-ojo a los tres apartados de source sink y el otro.
+Flume es un sistema para mover grandes cantidades de datos de diversas fuentes a un almacén centralizado.
+### Características
+* Arquitectura sencilla y flexible.
+* Robusto
+* Tolerante a fallos
+### Partes
+* Event: Unidad de dato a propagar.
+* **Source**: Origen.
+* **Sink**: Destino.
+* **Channel**: Buffer de almacenamiento intermedio que conecta el *Source* con el *Sink*.
+
+Para que Flume funcione debemos configurar correctamente estos tres últimos.
+
+Esto se realiza configurando un "agente" mediante un fichero local.
+
+Para lanzar el agente es necesario el nombre del agente, el directorio de configuración y el archivo de configuración.
+
+### Conexión única / múltiple
+
+Es fácil configurar varios agentes. Un solo agente debe conectar *source* y *sink* a través del *channel*.
+
+En caso de que haya más de un agente, la diferencia consiste en que el *sink* del primer agente debe coincidir con el *source* del segundo. Ambos han de ser de tipo AVRO (sistema de serialización de datos).
+
+Puede haber un caso en el que un único agente deba mandar la información por múltiples *flows*, de manera que se multiplexan los eventos en función de ciertas condiciones. (Un poco como un switch).
+
+### Definiciones
+
+* Source: Fuente de datos, parametrizable. Algunos tipos incluyen Avro, Exec, Spooling directory, Twitter, Kafka, Netcat, Http, Legacy, Custom, etc.
+* Sink: Extraen eventos de un channel y se almacenan en un sistema externo o se envían al siguiente agente. Algunos tipos incluyen HDFS, Hive, Logger, Avro, IRC, FileRll, Null, Hbase, Kafka, Custom, etc.
+* Channel: Por dónde pasan los eventos. Algunos tipos incluyen Memoria, JDBC, Kafka, File, Custom Channel, etc.
+* Interceptor: Modifica el evento en caliente.  Algunos tipos incluyen Timestamp (inserta una timestamp en la cabecera), Host (añade host o IP), Static (cabecera fija), Search&Replace, Regex, etc.
