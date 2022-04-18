@@ -14,8 +14,8 @@
 - [x] Día 3 - Flume
 - [x] Resumen - Flume
 - [ ] Resumen Tocho Spark
-- [ ] Ejercicios Spark Módulo 1
-- [ ] Ejercicios Spark Módulo 2
+- [x] Ejercicios Spark Módulo 1
+- [x] Ejercicios Spark Módulo 2
 - [ ] Ejercicios Spark Módulo 4
 - [ ] Ejercicios Spark Módulo 4.1
 - [ ] Ejercicios Spark Módulo 5
