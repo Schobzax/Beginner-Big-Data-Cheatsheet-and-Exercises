@@ -155,3 +155,92 @@ Se indica mediante `--master mesos`.
 
 ### WebUI
 El Standalone Cluster Manager de Spark tiene una interfaz web para ver la ejecución en proceso, localizada en spark://``<url>``:7077. La URL suele ser localhost si la ejecución es local.
+
+## Pair RDD
+Consiste en trabajar con pares clave-valor.
+
+En Spark, los pares clave-valor se llaman *Pair RDDs*. Permiten operar por clave en paralelo y reagrupar los datos en base a las mismas.
+
+### Creación
+La forma más sencilla de crear un *Pair RDD* es mapeando una clave y un valor.
+```
+val pairRDD = rdd.map(line => (line.key, line.value))
+```
+
+A partir de ahí podremos operar con él y usar las operaciones de un *Pair RDD*.
+
+**Importante: Las operaciones *Pair RDD* no sirven para *RDD* regulares, pero sí al contrario.
+
+En muchos sentidos, las operaciones por clave son "atajos" o "abreviaturas" de una o más operaciones con RDD regulares, pero que nos dan mucha potencia.
+
+## Pair RDDs: Joins y Shuffling
+
+### Join
+
+Un *join* solo es válido para *Pair RDD* porque requiere del uso de claves. Es muy parecido al uso que se le da en BBDD.
+
+Los tipos son los mismos que con operaciones de conjuntos clásicas: inner join, outer join, substract, union, intersection, etcétera. Todas las operaciones de conjuntos.
+
+**Importante: Las claves han de ser del mismo tipo. Los valores pueden ser de cualquier tipo.**
+
+### Shuffling
+
+Esta fase intermedia entre el `Map` y el `Reduce` no es 100% evitable. Consiste en el movimiento de datos de un nodo a otro y **aumenta** significativamente la **latencia**.
+
+Algunas maneras de evitarlo consisten en usar operaciones como **`reduceByKey`**, que es más eficiente que agrupar y después reducir.
+
+Esencialmente esto tiene como objetivo reducir la cantidad de datos que se envían a través de la red, para reducir la latencia de la fase *Shuffle*, mejorando así la eficiencia.
+
+## Partitioners
+
+¿Cómo sabe Spark dónde poner los datos? La respuesta está en los *Partitioners*.
+
+Un Partition siempre se queda en un solo nodo, y cada máquina del cluster tiene una o más particiones. El número total es configurable: normalmente refiere al número total de núcleos de ejecución (cores * nodos)
+
+El partitioning solo se realiza en Pair RDDs, porque dependen de las claves para realizarse correctamente.
+
+Hay dos maneras de particionar: *Hash partitioning* y *Range partitioning*.
+
+### Hash partitioning
+Usa una función hash para determinar dónde ponerlo. La clave aquí está en tener una buena función hash. Sin embargo, debido a que dependemos del valor de la clave, este método puede no ser del todo eficiente o equitativo.
+
+### Range partitioning
+Divide las Partition según el valor ordenado de las claves. Las claves en el mismo rango estarán en la misma máquina.
+
+Requiere hacer ciertas restricciones sobre las claves (p. ej.asumimos que es positiva y que su valor está entre 0 y 100). De esta manera, determinamos una serie de rangos que equilibren.
+
+### Ejecución
+Esto se hace mediante el método **`partitionBy`** sobre un RDD, pasándole un Partitioner explícito.
+
+Ejemplos:
+```
+val pairs = rdd.map(p => (p.clave, p.valor))
+
+val rangepart = new RangePartitioner(8,pairs) --se indica el número y sobre qué se va a ejecutar
+val partitioned = pairs.partitionBy(rangepart).persist()
+```
+
+Es importante persistir el objeto para no reejecutar el Partitioner en cada iteración.
+
+Range Partitioner requiere especificar el número de particiones y un PairRDD con Keys ordenadas.
+
+#### Operaciones
+Hay ciertas operaciones que nos devuelven y propagan un partitioner (`cogroup`, `join` y otras de conjuntos, `foldByKey`, `combineByKey`, `groupByKey` y otras por clave, `mapValues`, `flatMapValues`, etcétera)
+
+El resto no produce partitioners porque dan la posibilidad de modificar la clave (a propósito o por accidente), por ejemplo la operación `map`.
+
+### Dependencias Wide vs.Narrow
+Una RDD consta de cuatro partes:
+* Particiones: partes atómicas de un dataset.
+* Dependencias: modelan las relaciones entre RDDs y particiones.
+* Funciones: Función que le pasamos a una operación para transformar el dataset del padre al hijo.
+* Metadatos: schema de particionado y almacenamiento de los datos.
+
+* **Dependencias *narrow***: Cuando cada partición del padre es usada como mucho por una partición del hijo (no requieren shuffling). Ejemplos: `map, mapValues, flatMap, filter, mapPartitions, mapPartitionsWithIndex`
+* **Dependencias *wide**: Cuando una partición del padre es usada por >1 particiones del hijo. (requieren shuffling). Ejemplos: `cogroup, groupWith, join, leftOuterJoin, rightOuterJoin, groupByKey, reduceByKey, combineByKey, distinct, intersection, repartition, coalesce`
+
+**A más *wide*, más tráfico de red.**
+
+próximamente...
+## SparkSQL
+## SparkStreaming

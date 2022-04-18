@@ -40,9 +40,58 @@
 * `saveAsSequenceFile()` : guarda el resultado en un archivo en un sistema de almacenamiento. Recomendable para datasets medianos, grandes, muy grandes, etc.
 * `saveAsTextFile(file)` : guarda el resultado en un archivo de texto.
 
-
 ## Otros
 * `RDD.persist()` : guarda en memoria un conjunto de datos para evitar ejecutar la sucesión de transformaciones que ha llevado hasta él repetidas veces. Recomendable tenerla en mente para persistir datos intermedios de vez en cuando (si la secuencia de transformaciones acaba siendo muy grande).
+
+## Trabajo con pares RDD
+Ejemplo de función `func` `rdd.operacion(func) => rdd.operacion(a => a + a)`
+
+### Transformaciones 
+* `reduceByKey(func)` combina valores con la misma clave.
+* `groupByKey()` agrupa valores con la misma clave. Da `(Clave,[Grupo,De,Valores])`.
+* `combineByKey()` combina valores con la misma clave usando un tipo de resultado diferente. Parece complejo.
+* `mapValues(func)` aplica una función a cada **valor** de un *pair RDD* sin cambiar la clave.
+* `flatMapValues(func)` aplica un flatMap combinado con un mapValues. Devuelve valores clave-valor por cada valor.
+* `keys()` devuelve un RDD simple de las claves.
+* `subtractByKey(key)` elimina los elementos que tengan una clave dada (operación de conjuntos)
+* `join(key)` inner join entre dos RDD. Devuelve claves con grupos (ver groupByKey)
+* `rightOuterJoin(key)`, la clave ha de estar en el primer RDD.
+* `leftOuterJoin(key)`, la clave ha de estar en el segundo RDD.
+* `cogroup(key)`, agrupa datos que compartan clave. Con datos vacíos.
+* `values()` devuelve un RDD simple de los valores.
+* `sortByKey()` ordena un RDD por clave.
+
+### Acciones
+* `countByKey()` cuenta el número de elementos por clave.
+* `collectAsMap()` hace un `collect()` como un mapa para que sea más fácil buscarlo.
+* `lookup(key)` devuelve los valores asociados con una clave.
+
+## Dependencias y eficiencia
+* `toDebugString` muestra el plan de ejecución de una operación. Ahí podremos ver si va a haber mucho shuffle.
+* `dependencies` muestra la secuencia de dependencias que va a haber.
+  * Narrow: `OneToOneDependency`, `PruneDependency`, `RangeDependency`
+  * Wide: `ShuffleDependency`.
+
+### Dependencias Narrow
+* `map`
+* `mapValues`
+* `flatMap`
+* `filter`
+* `mapPartitions`
+* `mapPartitionsWithIndex`
+### Dependencias Wide
+* `cogroup`
+* `groupWith`
+* `join`
+* `leftOuterJoin`
+* `rightOuterJoin`
+* `groupByKey`
+* `reduceByKey`
+* `combineByKey`
+* `distinct`
+* `intersection`
+* `repartition`
+* `coalesce`
 
 ## Asuntos "avanzados"
 
@@ -51,3 +100,7 @@
   
 ### Imprimir un número de líneas
 * `rdd.take(n).foreach(println)` ejecuta lo anterior pero solo en un número `n` de líneas.
+
+### Ordenar un Pair RDD por los valores de clave
+* Hay que hacer un swap, luego un order by, y otro swap. Como esto lo tengo que hacer en los ejercicios, lo vamos viendo.
+
