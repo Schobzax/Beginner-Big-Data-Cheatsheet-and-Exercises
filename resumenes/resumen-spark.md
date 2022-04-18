@@ -55,3 +55,29 @@ Un RDD es:
 * **Inmutable**: no podemos realizar modificaciones sobre el RDD. Para modificarlo, crearemos uno nuevo.
 * **Distribuido**: Cada RDD se divide en múltiples particiones automáticamente. Puede ejecutarse en diferentes nodos.
 * Un **dataset**: Conjunto de datos.
+
+### Operaciones
+Sobre un RDD se pueden realizar:
+* **Transformaciones**: Crean un nuevo RDD.
+* **Acciones**: Devuelven un resultado (no otro RDD).
+
+Esta diferencia es muy importante en términos de eficiencia. Se explicará más adelante.
+
+Nos comunicamos con Spark mediante el SparkContext. Tiene diversos métodos para crear RDDs a partir de datos locales.
+
+### Transformaciones
+* Son perezosas (no se procesan sobre RDD hasta ejecutar una acción). No se computan inmediatamente.
+
+### Acciones
+* No son perezosas, son inmediatamente computadas.
+
+Esta diferencia clave entre transformaciones y acciones es lo que permite a Spark reducir el tráfico de red. Una vez que Spark ve la cadena de transfomaciones, procesa solo los datos necesarios para el resultado de la acción.
+
+Hay que insistir: **No se ejecuta nada hasta que no se realiza una acción**.
+
+#### Una analogía incorrecta pero que nos ayudará a entender:
+¿Qué significa procesar solo los datos necesarios? Si por ejemplo, tras ejecutar todas las transformaciones solo se sacan las primeras 10 líneas, solo se guardarán en memoria las primeras 10 líneas. Si Spark ejecutara todas las transformaciones en vez del resultado, tendría que cargar todo el dataset para luego sacar las primeras 10 líneas.
+
+#### Persistencia:
+Si se van a ejecutar varias veces sobre los mismos datos puede ser interesante realizar una operación `RDD.persist()`,, para no tener que ejecutar la secuencia de transformaciones repetidas veces. De esta manera los datos se guardan en memoria, particionados a lo largo del clúster para su reutilización.
+
