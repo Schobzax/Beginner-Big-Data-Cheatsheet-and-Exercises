@@ -154,3 +154,53 @@ Sqoop facilita importar directamente a Hive sin pasar por HDFS.
   * Por último se genera uan instrucción de carga para mover los datos al warehouse de hive.
 
 Las opciones son similares y tratan con diversas cuestiones de configuración, particiones, reemplazos de carácteres especiales, etcétera.
+
+## Flume
+Sobre todo temas de configuración más usuales.
+### Sources por defecto
+* Avro: Escucha de un puerto Avro y recibe eventos desde streams de clientes externos Avro.
+* Thrift: Igual pero con Thrift, puede autenticarse con Kerberos
+* Exec: Ejecuta comandos Unix al inicializar la fuente. Si es comando continuo (cat, tail) se irán recogiendo eventos según un límite (tiempo, nlíneas). Si es concreto (date, ls) solo se recoge un evento.
+* JMS: Se leen mensajes de una cola.
+* Spooling directory: Se lee desde ficheros movidos a un directorio concreto. Se va leyendo el fichero y enviando el contenido al channel.
+* Twitter: Conecta a la API de Twitter con las credenciales de tu usuario.
+* Kafka: Mensajes almacenados en Kafka.
+* Netcat: Se lee desde un puerto. Cada línea de texto es un evento.
+* Sequence Generator: Generador secuencial de eventos.
+* Syslog: El syslog de la máquina.
+* Http: Eventos desde petición HTTP GET o POST.
+* Stress: Simula un test de carga.
+* Legacy: Eventos de agentes Flume más antiguos.
+* Custom: Tiene que configurarse mediante una clase Java propia implementando las interfaces base.
+* Scribe: Ingesta propia, utilizable *junto a* Flume.
+### Sinks por defecto
+* HDFS: Almacena eventos el sistema de archivos de Hadoop, en formato text y sequenceFile. Permite compresión.
+* Hive: Almacena en texto o JSON en tablas o particiones de Hive. Transaccionalidad de Hive.
+* Logger: Log INFO para guardar los eventos.
+* Avro: Host/port de Avro.
+* Thrift: Lo mismo.
+* IRC: Usa un chat IRC.
+* FileRoll: Sistema de ficheros local.
+* Null: Se tiran.
+* Hbase: Se almacenan en una base de datos Hbase, usando un serializer específico. Autenticable mediante Kerberos.
+* MorphlineSolr: Transforma los eventos y los almacena en un motor de búsqueda Solr.
+* ElasticSearch: Se almacenan en ElasticSearch
+* Kite Dataset: Se almacenan en Kite (una capa de Hadoop)
+* Kafka: En un topic de Kafka.
+* Custom: Lo mismo que los sources, tienen que configurarse específicamente.
+### Channels por defecto
+* Memoria: Los eventos se almacenan en memoria de tamaño predefinido.
+* JDBC: Persistidos en una base de datos, hay que definir driver, url, etc.
+* Kafka: Clúster de Kafka. Alta disponibiilidad y replicación.
+* File: En un fichero en el sistema local.
+* Spillable Memory: En una cola en memoria. Si se sobrecarga la misma se pueden guardar en disco.
+* Pseudo Transaction: Testing.
+* Custom Channel: Pues eso mismo.
+### Interceptores por defecto
+* Timestamp: Agrega una timestamp en la cabecera.
+* Host: Añade Host o IP al evento.
+* Static: Cabecera fija.
+* UUID: Identificador único.
+* Morphline: Transformación predefinida en un fichero de configuración de la transformación.
+* Search&Replace: Busca y reemplaza una cadena en el evento.
+* Regex: Lo mismo pero con expresiones regulares.
