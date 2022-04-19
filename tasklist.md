@@ -17,9 +17,9 @@
 - [x] Ejercicios Spark Módulo 1
 - [x] Ejercicios Spark Módulo 2
 - [x] Ejercicios Spark Módulo 4
-- [ ] Ejercicios Spark Módulo 4.1
+- [x] Ejercicios Spark Módulo 4.1
 - [ ] Ejercicios Spark Módulo 5
 - [ ] Ejercicios Spark Módulo 6
 - [ ] Snippets útiles
   - [ ] Easy Word Count
-  - [ ] El tema del swap, sort, swap by ordenador
+  - [x] El tema del swap, sort, swap by ordenador
