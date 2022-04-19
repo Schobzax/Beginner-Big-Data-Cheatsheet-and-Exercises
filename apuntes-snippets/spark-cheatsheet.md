@@ -129,7 +129,7 @@ Como podrás comprobar, te crea una variable automaticamente con la que puedes t
 * La lectura desde origen se realiza con `read`: `val abc = spark.read.json("asdf.json")` para leer desde json. `spark` es una `SparkSession`.
 
 #### **Uso de SQL en SparkSQL**
-* Lo primero que hay que hacer es registrar el DataFrame como vista temporal SQL: `DF.createOrReplaceTempView("ejemplito")`
+* Lo primero que hay que hacer es registrar el DataFrame como vista temporal SQL: `DF.createOrReplaceTempView("ejemplito")`, o como tabla temporal: `DF.registerTempTable("ejemplito")`
 * A partir de un objeto SparkSession: `spark.sql(SELECT * FROM ejemplito WHERE condicion")`.
 
 #### **Tipos de datos**

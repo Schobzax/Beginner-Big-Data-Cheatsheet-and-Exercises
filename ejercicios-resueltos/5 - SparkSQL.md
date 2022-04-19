@@ -102,6 +102,74 @@ OK
 Time taken: 0.738 seconds, Fetched: 5 row(s)
 ```
 
-## 5.3 - DataFrames
+## 5.3 - DataFrames (Partidos)
 
-## 5.4 - Afianzar
+Vamos a crear un DataFrame de forma explícita.
+
+1. Lo primero es crear un contexto SQL.
+```
+scala> val ssc = new org.apache.spark.sql.SQLContext(sc)
+```
+
+2. Ahora debemos importar los implicits que nos van a servir para convertir RDDs en DataFrames y Rows.
+```
+scala> import sqlContext.implicits._
+scala> import org.apache.spark.sql._
+```
+
+3. Ahora cargamos el dataset "DataSetPartidos" en una variable que nos sirva para generar un esquema.
+```
+scala> val ruta = "/home/cloudera/BIT/DataSetPartidos.txt"
+scala> val dataSetPartidos = sc.textFile(ruta)
+```
+
+4. Vamos a crear una variable que contenga el esquema de estos datos, que ya se nos da explícito en el documento de los ejercicios, y creamos un schema a partir de esta string.
+```
+scala> val esquemaPartidos = "idPartido::temporada::jornada::EquipoLocal::EquipoVisitante::golesLocal::golesVisitante::feha::timestamp"
+scala> val schema = StructType(esquemaPartidos.split("::").map(fieldName => StructField(fieldName, StringType, true)))
+```
+
+5. Convertimos las filas del RDD a Rows y le aplicamos el esquema finalmente.
+```
+scala> val rowRDD = dataSetPartidos.map(_.split("::")).map(p => Row(p(0),p(1),p(2),p(3),p(4),p(5),p(6),p(7),p(8).trim))
+scala> val dataFramePartidos = sqlContext.createDataFrame(rowRDD,schema)
+```
+
+6. Por último, registramos el DataFrame como una Tabla.
+```
+scala> dataFramePartidos.registerTempTable("partidos")
+```
+
+Ya estamos listos para realizar consultas sobre esta tabla.
+```
+scala> val results = sqlContext.sql("SELECT temporada, jornada FROM partidos").show()
+```
+Nótese que el resultado es accesible como DataFrame y como RDD normal y corriente:
+```
+scala> results.map(t => "Name:" + t(0)).take(10)
+```
+
+7. Registremos el récord de goles como visitante en una temporada del Oviedo.
+
+*Nota: Es recomendable el uso de la interfaz API de DataFrame en contraposición a usar sentencias SQL en el contexto; pero dado que el esquema provisto es todo Strings, esto solo funciona de la segunda manera en tanto que el propio SQL infiere cuando quieres realizar una suma, por lo visto.*
+```
+scala> val recordOviedo = sqlContext.sql("select sum(golesVisitante) as goles, temporada from partidos where equipoVisitante LIKE 'Real Oviedo' group by temporada order by goles desc")
+```
+
+8. ¿Quién ha estado más temporadas en 1ª División, el Sporting o el Oviedo?
+```
+scala> val temporadasOviedo = sqlContext.sql("SELECT COUNT(DISTINCT(temporada)) FROM partidos WHERE equipoLocal LIKE '%Oviedo%' OR equipoVisitante LIKE '%Oviedo%'")
+scala> val temporadasSporting = sqlContext.sql("SELECT COUNT(DISTINCT(temporada)) FROM partidos WHERE equipoLocal LIKE '%Sporting%' OR equipoVisitante LIKE '%Sporting%'")
+```
+El Sporting ha estado más temporadas, con 45; frente a las 32 del Oviedo. Realmente no podemos cotejar si los partidos son de 1ª división o de 2ª al haber registros sin distinción de ambas.
+
+Ahora es hora de jugar con este dataset cuanto se quiera. Por ejemplo, cabe destacar que el Real Jaén ha disputado partidos en 1ª o 2ª división entre los años 1976 y 1979, en la temporada 1997-1998, de los años 2000 a 2002, y por último en 2013-2014; un total de 7 temporadas en 1ª o 2ª división.
+```
+scala> val temporadasJaen = sqlContext.sql("select distinct(temporada) from partidos where equipoLocal LIKE 'Jaen' OR equipoVisitante LIKE 'Jaen' ORDER BY temporada")
+scala> temporadasJaen.show() -- Elegimos la vertiente show porque tenía plena confianza en que eran menos de 20 temporadas, y así era.
+```
+
+Otros datos interesantes es que el Linares ha estado en 1ª o 2ª división en la temporada 1973-1974 y entre los años 1980 y 1984. *(Este último se deja como ejercicio para el lector)*
+
+## 5.4 - Afianzar (Simpsons)
+
