@@ -115,3 +115,55 @@ Ejemplo de función `func` `rdd.operacion(func) => rdd.operacion(a => a + a)`
 resXX: org.apache.spark.rdd.RDD[...]
 ```
 Como podrás comprobar, te crea una variable automaticamente con la que puedes trabajar. `res1`, `res12`, `res48`, `res123`... puedes trabajar con esas variables. No son intuitivas y no se recomienda, pero te pueden sacar de un apuro inmediato.
+
+## Librerías adicionales
+
+### SparkSQL
+* `pairRDD.toDF(["columna1","columna2",...])` crea un DataFrame a partir de la estructura implícita de un PairRDD.
+  * Si no se incluyen nombres de columna, asume `_1, _2, _3`...
+* La creación explícita es un poco más complicada.
+  1. Creamos un RDD.
+  2. Creamos un *StructField* que refleja la estructura de ese RDD, `schema`.
+  3. Convertimos el RDD a filas de atributos (`rowRDD`)
+  4. Usamos `createDataFrame(rowRDD,schema)` para aplicar la estructura creada en `schema` a las filas del RDD `rowRDD`.
+* La lectura desde origen se realiza con `read`: `val abc = spark.read.json("asdf.json")` para leer desde json. `spark` es una `SparkSession`.
+
+#### **Uso de SQL en SparkSQL**
+* Lo primero que hay que hacer es registrar el DataFrame como vista temporal SQL: `DF.createOrReplaceTempView("ejemplito")`
+* A partir de un objeto SparkSession: `spark.sql(SELECT * FROM ejemplito WHERE condicion")`.
+
+#### **Tipos de datos**
+SQL: x[Type]
+* Tipos simples: `Byte`,`Short`,`Int`,`Long`,`Decimal`,`Float`,`Binary`,`Boolean`,`Timestamp`,`Date`,`String`
+* Tipos complejos: `ArrayType(elementType,constainsNull)`,`MapType(keyType,valueType,valueContainsNull`,`StructType(List[StructFields])`
+* 
+Los tipos complejos son anidables.
+
+#### **API**
+Es importante destacar que también hay métodos *lazy* y métodos *eager*, es decir, que devuelven nada hasta que se realiza una acción y que realizan esa acción respectivamente.
+##### Transformaciones (Lazy)
+* `df.select(columna1[, columna2, ...])` devuelve las columnas nombradas del df. (Similarmente, hay operaciones análogas a `where`, `orderBy`, etc.)
+* `df.join(otroDF)` hace un JOIN de df y otrodF.
+* `df.agg(columna1[, columna2, ...])` hace la sumatoria de las columnas especificadas.
+###### Agregación
+* `df.groupBy(columna)` devuelve un `RelationalGroupedDataset` y a partir de ahí se definen funciones de agregación estándar: count, max, min, sum y avg. (Hay que especificar la columna)
+###### Operaciones de conjuntos
+Todas las que se puedan pensar.
+* `df1.join(df2, $"df1.id" === $"df2.id"[,"tipo"])` pasándole los parámetros de unión y siendo `tipo` el tipo de join (por defecto es Inner, pero puede especificarse `inner`, `outer`, `left_outer`, `right_outer`, etc.)
+##### Acciones (Eager)
+* `df.show()` muestra los primeros 20 elementos del DF de forma tabulada.
+* `df.printschema()` hace un `describe` con el DF en formato de árbol.
+##### Columnas
+Hay varias maneras de referirse a ellas:
+* `df.filter($"nombreCol" = 0)` - notación $
+* `df.filter(df("nombreCol") = 0)` - referencia a DataFrame
+* `df.filter("nombreCol = 0")` - sentencia SQL tradicional
+##### Tipaje de un Row
+Los DataFrames tienen limitaciones en tanto que devuelven *Rows* no tipadas, por lo que tendremos que tipar nosotros lo que devuelvan.
+* `row(0).asInstanceOf[Type]` tipa un campo de una fila, siendo `Type` por ejemmplo `String` o `Int`.
+
+#### DataSets
+* `myDF.toDS` transforma un DataFrame en un DataSet.
+* `val myDS = spark.read.json("asdf.json").as[Type]` permite leer datos explicitando el tipo.
+* `myRDD.toDS` transforma un RDD en DataSet.
+* `List("a","b","c").toDS` transforma una lista en DataSet.

@@ -242,4 +242,81 @@ Una RDD consta de cuatro partes:
 **A más *wide*, más tráfico de red.**
 
 ## SparkSQL
+
+SparkSQL es una interfaz pensada para trabajar con datos estructurados (con schema) y semiestructurados.
+
+Permite la carga de datos estructurados, el procesamiento de consultas relacionales desde dentro de Spark y desde aplicaciones externas con conexiones a Spark y la integración con Java/Python/Scala y la posibilidad de hacer joins con RDDs y tablas y otras cosas.
+
+**Es una especie de "librería"**.
+
+Sirve para optimizar las consultas a datos estructurados. De normal, Spark no conoce dicha estructura, por lo que no es posible optimizar. Esto nos permite, entre otras cosas, filtrar antes de agrupar y evitar los productos cartesianos.
+
+**DataFrame**: RDDs de registros distribuidos con esquema conocido. Es una **abstracción** que representa una **tabla** de une esquema de bases de datos.
+
+No están tipados (`RDD[String]` vs. `DataFrame`).
+
+### Trabajo
+
+Para iniciar el trabajo con Spark SQL necesitamos una **Sesión Spark (Spark Session)**, que es esencialmente un SparkContext para SparkSQL.
+
+Para ello hay que ejecutar `import org.apache.spark.sql.SparkSession`.
+
+### Creación
+
+Los DataFrames pueden crearse de dos maneras: a partir de un RDD creando un esquema explícito o infiriendo uno implícito; o leyendo datos desde un origen con esquema (bases de datos Hive, JSON, XML...)
+
+#### **Inferencia**
+Dado un PairRDD, puede crearse un DataFrame a partir de un esquema inferido automáticamente con el método **`toDF`**. Sin argumentos asigna `_1`, `_2`,... a las columnas.
+
+#### **Explícita**
+1. Creamos un RDD con las filas del RDD original. (Rows)
+2. Creamos un esquema representado por un *StructType* que refleja la estructura del RDD *Rows*.
+3. Aplicamos el esquema a *Rows* a través del método `createDataFrame`, provisto por el SparkSession.
+4. Registramos el DF como tabla para operarla con SQL tradicional con el método `registerTempTable()`.
+
+#### **Lectura de datos**
+Mediante el propio objeto SparkSession podemos leer datos [semi]estructurados mediante el método `read`, infiriendo su esquema en el proceso.
+`val df = spark.read.json("asdf.json")`
+
+### Uso
+Para usar SQL en SparkSQL, lo primero que hay que hacer es declarar el DataFrme como vista temporal SQL. Esto se hace mediante el método `createOrReplaceTempView()`, que nos sirve además para darle un nombre en SQL.
+```
+exampleDF.createOrReplaceTempView("examplename")
+val result = spark.sql("SELECT * FROM examplename WHERE condicion")
+```
+Siendo `spark` una `SparkSession`.
+
+Por otro lado, SparkSQL tiene su propia API relacional para usar los DataFrames, que permiten optimizar las consultas.
+
+Los tipos de datos deben ser importados: `import.org.apache.spark.sql.types._`.
+
+Como estamos usando Spark, las operaciones relacionales se optimizan, por ejemplo, filtrando antes de un join.
+
+La API tiene métodos similares a `SELECT`,`WHERE`,`LIMIT`,`GROUP BY`,`ORDER BY`, y `JOIN`.
+
+La API puede verse en el [cheatsheet](../apuntes-snippets/spark-cheatsheet.md#sparksql).
+
+### Errores
+Al no ser tipados el código compilará; pero si hacemos una consulta sobre una columna que no existe, el error será en tiempo de ejecución (*runtime exception*).
+
+Una posible solución para esto son los **DataSets**.
+
+### DataSets
+
+Facilitan el tipado y dan acceso a operaciones con RDDs. Un Dataset es esencialmente una "colección distribuida de datos tipados", siendo un Dataframe un tipo específico de Dataset.
+
+Un DS es la unión de RDD y DF.
+
+**Nos da la posibilidad de mezclar ambas APIs**.
+
+**Importante**: Las operaciones tipadas han de realizarse sobre columnas tipadas, y no al revés. En conclusión: al transformar un DF a un DS tenemos que pasar información explícita de tipos. Para más información sobre qué operaciones son tipadas y cuáles no, ver el [cheatsheet](../apuntes-snippets/spark-cheatsheet.md#datasets).
+
+### Resumiendo
+* **¿Cuándo usar RDD?** Cuando tengamos datos desestructurados, con operaciones de muy bajo nivel o con datos complejos no serializables con Encoders.
+* **¿Cuándo usar DataFrames?** Cuando tengamos datos estructurados o semiestructurados y queremos el mejor rendimiento y optimización por parte de Spark.
+* **¿Cuándo usar DataSets?** Cuando tengamos datos estructurados o semiestructurados y queremos tipado total de datos, trabajar con una API funcional y un buen rendimiento pero sin necesitar que sea el mejor.
+
+### Hive
+Puede usarse SparkSQL con Hive, accediendo a las tablas Hive, a UDF (User Defined Functions), a SerDes (formatos de serialización y deserialización) y a HiveQL.
+
 ## SparkStreaming
