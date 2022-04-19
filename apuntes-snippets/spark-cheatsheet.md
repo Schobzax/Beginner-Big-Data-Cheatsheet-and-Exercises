@@ -142,11 +142,11 @@ Los tipos complejos son anidables.
 #### **API**
 Es importante destacar que también hay métodos *lazy* y métodos *eager*, es decir, que devuelven nada hasta que se realiza una acción y que realizan esa acción respectivamente.
 ##### Transformaciones (Lazy)
-* `df.select(columna1[, columna2, ...])` devuelve las columnas nombradas del df. (Similarmente, hay operaciones análogas a `where`, `orderBy`, etc.)
+* `df.select(columna1[, columna2, ...])` devuelve las columnas nombradas del df. (Similarmente, hay operaciones análogas a `where`, `orderBy`, etc.) - Hay que especificar el nombre de la columna.
 * `df.join(otroDF)` hace un JOIN de df y otrodF.
 * `df.agg(columna1[, columna2, ...])` hace la sumatoria de las columnas especificadas.
 ###### Agregación
-* `df.groupBy(columna)` devuelve un `RelationalGroupedDataset` y a partir de ahí se definen funciones de agregación estándar: count, max, min, sum y avg. (Hay que especificar la columna)
+* `df.groupBy(columna)` devuelve un `RelationalGroupedDataset` y a partir de ahí se definen funciones de agregación estándar: count, max, min, sum y avg. (Hay que especificar el nombre de la columna, sin dólar)
 ###### Operaciones de conjuntos
 Todas las que se puedan pensar.
 * `df1.join(df2, $"df1.id" === $"df2.id"[,"tipo"])` pasándole los parámetros de unión y siendo `tipo` el tipo de join (por defecto es Inner, pero puede especificarse `inner`, `outer`, `left_outer`, `right_outer`, etc.)
