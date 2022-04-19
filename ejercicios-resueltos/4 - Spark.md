@@ -231,3 +231,88 @@ scala> namesByPostalCode.sortByKey().take(5).foreach{
      | }
 }
 ```
+
+## Módulo 4.1
+
+### EJ1
+En este ejercicio trabajaremos con el dataset shakespeare, desde HDFS. El efecto de tener el dataset en HDFS es que no es necesario enlazar con el sistema local mediante `file:`.
+
+28. Analizaremos las palabras más repetidas en la obra de Shakespeare, mostrando las 100 palabras que más aparecen. Esto implica ordenar por valor entre otras cosas.
+```
+scala> val chespirwords = sc.textFile("shakespeare/*").flatMap(line => line.split(" "))
+scala> val palabrasContadas = chespirwords.map(palabra => (palabra,1)).reduceByKey(_+_)
+scala> val palabrasOrdenadas = palabrasContadas.map(palabra => palabra.swap).sortByKey(false).map(_.swap)
+```
+Aquí lo que hacemos es tomar los archivos de shakespeare y partirlos por palabras, y después montar un par contador (elemento,1) y reduciendo por clave (mediante suma), para después ordenar.
+
+Usamos flatMap porque no necesitamos ninguna estructura compleja, solo las palabras. También podemos ver mucho uso de las barras bajas (`_`), para ver su utilidad y versatilidad como atajo para el elemento actual.
+
+A continuación vamos a mostrar las 100 palabras que más aparecen.
+```
+scala> palabrasOrdenadas.take(100).foreach(println)
+(,64531)
+(the,25069)
+(and,18793)
+(to,16436)
+[...]
+(your,6119)
+(       And,5955)
+(for,5781)
+[...]
+(or,1792)
+(       [Enter,1747)
+(more,1676)
+(hath,1668)
+(you,,1620)
+(KING,1600)
+[...]
+```
+
+En los resultados se observan varios problemas con este análisis: entre las palabras más repetidas encontramos muchas palabras vacías; pronombres, artículos, proposiciones, problemas de mayúsculas, espacios, etcétera. A continuación en los siguientes ejercicios intentaremos resolverlos.
+
+29. Lo primero que podemos hacer es crear un dataset de "stop words", lo que se denominan en inglés palabras vacías, tomando un archivo csv del que ya disponemos en HDFS.
+```
+scala> val stopwords = sc.textFile("stop-word-list.csv").flatMap(line => line.split()).map(word => word.replace(" ",""))
+```
+Vemos que hemos tenido que realizar una limpieza también porque hay espacios por medio.
+* Al usar `flatMap` evitamos que la lista de palabras vacías se represente en un Array de un Array, lo cual nos ayuda en las instrucciones posteriores.
+
+30. Después vamos a "limpiar" el dataset: no nos interesan espacios en blanco, ni palabras de una sola letra, ni distinguir entre mayúsculas y minúsculas.
+```
+scala> val chespirlimpio = sc.textFile("shakespeare/*").map(line => line.replaceAll("[^a-zA-Z]+"," ")).flatMap(line => line.split(" ")).map(word => word.toLowerCase)
+```
+* Tomamos todos los archivos.
+* Reemplazamos todo lo que no sean letras mayúsculas o minúsculas por un espacio.
+* Separamos por espacios.
+* Quitamos las mayúsculas a todas las palabras.
+
+Lo último que tenemos que hacer es eliminar las *stopwords* y los espacios vacíos realizar el conteo y ordenado.
+```
+scala> val chespirUtil = chespirlimpio.subtract(sc.parallelize(Seq(" "))).subtract(stopwords)
+--- Substraemos lo que no nos interesa, incluidos espacios.
+scala> val conteo = chespirUtil.map(word => (word,1)).reduceByKey(_+_).map(word => word.swap).sortByKey(false).map(_.swap)
+scala> val conteoFinal = conteo.filter(word => word._1.size > 1) -- Eliminamos palabras de longitud 1 y 0
+```
+
+1.  Vamos a ver el resultado.
+```
+scala> conteoFinal.take(100).foreach(println)
+(thou,5874)
+(thy,4273)
+(shall,3738)
+(king,3488)
+(lord,3391)
+(thee,3384)
+(sir,3032)
+(now,2947)
+(good,2929)
+(come,2600)
+(ll,2490) -- you'll, we'll, they'll, I'll...
+(here,2433)
+(enter,2427)
+[...]
+(gloucester,742) -- Me ha parecido curioso.
+[...]
+```
+### EJ2 - Counts
+No realizado por inexistencia del dataset.

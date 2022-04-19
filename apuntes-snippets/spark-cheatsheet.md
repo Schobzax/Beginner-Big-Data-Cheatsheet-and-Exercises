@@ -101,6 +101,10 @@ Ejemplo de función `func` `rdd.operacion(func) => rdd.operacion(a => a + a)`
 ### Imprimir un número de líneas
 * `rdd.take(n).foreach(println)` ejecuta lo anterior pero solo en un número `n` de líneas.
 
+### Limpieza de espacios o carácteres
+* `rdd.map(word => word.replace("to_replace","replace_with"))` reemplaza carácteres.
+* REGEXP
+
 ### Ordenar un Pair RDD por valor
 * `rdd.map(field => field.swap).sortByKey([false]).map(field => field.swap)`, siendo `[false]` lo que determina si es orden ascendente.
 
