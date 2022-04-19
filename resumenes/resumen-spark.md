@@ -241,6 +241,5 @@ Una RDD consta de cuatro partes:
 
 **A más *wide*, más tráfico de red.**
 
-próximamente...
 ## SparkSQL
 ## SparkStreaming

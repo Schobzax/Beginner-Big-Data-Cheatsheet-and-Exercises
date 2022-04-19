@@ -142,3 +142,92 @@ Como vemos, `_` (barra baja) es un capaz sustituto para un "this" en Java, por e
 Además, mapeamos esas líneas filtradas, tomando la 1ª y 3ª palabras de cada.
 
 ## Módulo 4
+
+### A - Weblogs
+
+18. Usando MapReduce vamos a leer el número de peticiones de cada usuario. Empezamos por crear un map para conteo: (ID, 1).
+```
+scala> val rdd = sc.textFile("file:/home/cloudera/BIT/weblogs/*").map(line => line.split(" ")).map(words => (words(2),1))
+```
+Esto lo que hace es que primero carga el archivo de texto, y lo divide en un array de palabras por línea; y después toma de cada array el 3er elemento (el id de usuario) y añade el número 1 como segundo elemento para crear el par (ID, 1).
+
+19. Ahora reducimos por clave.
+```
+scala> val red = rdd.reduceByKey((v1,v2) => v1+v2)
+```
+Como ya hemos visto en teoría, esto lo que implica es sumar los valores `v1` y `v2` si las claves son iguales.
+
+20. Mostramos los id de usuarios y los accesos para los 10 usuarios con mayor número de accesos. Para esto hay que ordenar por valor.
+
+```
+scala> val ordo = red.map(field => field.swap).sortByKey(false).map(field => field.swap)
+```
+Lo que hemos hecho en esta línea es cambiar el valor por la clave, ordenar por la que ahora es la clave (en realidad el valor) y volver a darles la vuelta. De esta manera, se queda ordenado por valor.
+
+21. Cremos un RDD donde la clave es el ID de usuario y el valor es la lista de IPs asociadas (IPs agrupadas por userID).
+```
+val idip = sc.textFile("file:/home/cloudera/BIT/weblogs/*").map(line => line.split(" ")).map(words => (words(2), words(0))).groupByKey()
+```
+
+22. Vamos a ponerlo bonito usando un bucle for.
+```
+scala> userips.take(10).foreach{
+     | case(x,y) => println("ID:"+x)
+     | println("IPS:")
+     | y.foreach(println)
+     | }
+```
+Lo que hacemos con esto es lo siguiente:
+* Por cada elemento (clave, valores) tomamos `x` como la clave e `y` como el valor.
+* Imprimimos "ID:" seguido de la clave.
+* Imprimimos "IPS:" en otra línea.
+* Imprimimos cada IP asociada a esa clave en una línea separada.
+
+### B - Accounts
+
+23. Vamos a unir los datos del archivo `accounts.csv` con los datos de weblogs usando el userid como clave.
+
+Lo primero que hacemos es montar un RDD con los datos de accounts.
+```
+scala> val accounts = sc.textFile("file:/home/cloudera/BIT/accounts.csv").map(line => line.split(",")).map(account => (account(0), account))
+```
+Ahora realizamos la unión de ambos.
+```
+scala> val union = accounts.join(red) -- Lo unimos con el número de peticiones por usuario.
+```
+24. Vamos a crear un RDD que tome solo una serie de datos: userid, nº visitas (ambos de `red`), nombre y apellido. Para ello hay que tener en cuenta la posición de cada elemento y donde se haya:
+```
+scala> for(pair <- union.take(5)){println(pair._1,pair._2._2,pair._2._1(3),pair._2._1(4))}
+```
+Hay que tener en cuenta la estructura.
+* Por un lado, tenemos el primer elemento de la pareja que es la clave, el ID de usuario.
+* Por otro lado, tenemos el par con los datos de accounts y con el número de requests por usuario.
+  * Dentro de los datos de accounts tenemos que coger el 4º y 5º elemento (los últimos dos)
+  * Y el nº de requests es el segundo elemento del segundo elemento de la pareja inicial.
+
+Es más sencillo de entenderlo que de explicarlo, solo hay que intentar visualizarlo.
+
+### C - Más métodos
+
+25. Usando keyBy, crea un RDD con los datos de las cuentas y con el código postal como clave (9º elemento).
+```
+scala> val accountsByPostalCode = sc.textFile("file:/home/cloudera/BIT/accounts.csv").map(_.split(",")).keyBy(_(8))
+```
+Aquí lo que hacemos es partir la línea por comas como antes, pero tomamos como clave el 9º elemento tal y como se nos ha indicado.
+
+26. Ahora creamos un Pair RDD con clave el código postal y valor una lista de nombres (Apellido, Nombre) que se correspondan con ese código postal.
+```
+scala> val namesByPostalCode = accountsByPostalCode.mapValues(values => values(4) + "," + values(3)).groupByKey()
+```
+Lo que estamos haciendo aquí es operar únicamente con los valores usando mapValues, ya que la clave no cambia. Tomamos el apellido y el nombre y agrupamos por clave.
+
+27. Ordenamos por código postal y lo ponemos en un formato legible (como en el ejercicio 22) para los primeros 5.
+
+Usaremos sortByKey() para ordenar por clave y después ejecutaremos el bucle.
+```
+scala> namesByPostalCode.sortByKey().take(5).foreach{
+     | case(x,y) => println("---" + x)
+     | y.foreach(println)
+     | }
+}
+```

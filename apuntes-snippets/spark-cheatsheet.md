@@ -101,6 +101,14 @@ Ejemplo de función `func` `rdd.operacion(func) => rdd.operacion(a => a + a)`
 ### Imprimir un número de líneas
 * `rdd.take(n).foreach(println)` ejecuta lo anterior pero solo en un número `n` de líneas.
 
-### Ordenar un Pair RDD por los valores de clave
-* Hay que hacer un swap, luego un order by, y otro swap. Como esto lo tengo que hacer en los ejercicios, lo vamos viendo.
+### Ordenar un Pair RDD por valor
+* `rdd.map(field => field.swap).sortByKey([false]).map(field => field.swap)`, siendo `[false]` lo que determina si es orden ascendente.
 
+## Troubleshooting
+
+### ¡Se me ha olvidado pasar el valor a variable!
+¡No pasa nada! Si estás trabajando en consola, presta atención a la línea que te devuelve. Normalmente empezará algo así:
+```
+resXX: org.apache.spark.rdd.RDD[...]
+```
+Como podrás comprobar, te crea una variable automaticamente con la que puedes trabajar. `res1`, `res12`, `res48`, `res123`... puedes trabajar con esas variables. No son intuitivas y no se recomienda, pero te pueden sacar de un apuro inmediato.

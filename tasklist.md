@@ -16,7 +16,7 @@
 - [ ] Resumen Tocho Spark
 - [x] Ejercicios Spark Módulo 1
 - [x] Ejercicios Spark Módulo 2
-- [ ] Ejercicios Spark Módulo 4
+- [x] Ejercicios Spark Módulo 4
 - [ ] Ejercicios Spark Módulo 4.1
 - [ ] Ejercicios Spark Módulo 5
 - [ ] Ejercicios Spark Módulo 6
