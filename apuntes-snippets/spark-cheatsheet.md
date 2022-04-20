@@ -167,3 +167,21 @@ Los DataFrames tienen limitaciones en tanto que devuelven *Rows* no tipadas, por
 * `val myDS = spark.read.json("asdf.json").as[Type]` permite leer datos explicitando el tipo.
 * `myRDD.toDS` transforma un RDD en DataSet.
 * `List("a","b","c").toDS` transforma una lista en DataSet.
+
+### Spark Streaming
+* Comienzo: `start()`.
+* Fin: `awaitTermination()`.
+
+#### Operaciones stateful
+* `updateStateByKey(function)` mantiene el estado a través de los batches a través de una variable.
+
+#### Output Operations
+* `print`, `saveAsTextFiles`, `saveAsObjectFiles`, `foreachRDD(function, time)`.
+
+#### Window
+* `window()` para configurarla.
+Parámetros: `windowDuration` - batches a tener en cuenta, `slidingDuration` - frecuencia de ejecución.
+* `reduceByWindow()` reduce por ventana.
+* `reduceByKeyAndWindow()` reduce por clave y ventana.
+* `countByWindow()` cuenta el número de elementos por ventana.
+* `countByValueAndWindow()` cuenta por valor el número de elementos por ventana.

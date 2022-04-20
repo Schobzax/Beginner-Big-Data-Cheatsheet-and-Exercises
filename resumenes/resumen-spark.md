@@ -320,3 +320,43 @@ Un DS es la unión de RDD y DF.
 Puede usarse SparkSQL con Hive, accediendo a las tablas Hive, a UDF (User Defined Functions), a SerDes (formatos de serialización y deserialización) y a HiveQL.
 
 ## SparkStreaming
+
+Spark Streaming es una herramienta que simula la toma de datos en tiempo real dividiendo los datos en diferentes RDDs, mezclando así la programación en lotes con la de tiempo real.
+
+En Spark Streaming trabajamos con **DStreams** (discretized streams), que está compuesto por RDDs (por lo tanto se pueden usar transformaciones con esos RDD)
+
+Ofrece tolerancia de fallos.
+
+**Checkpoint**: Mecanismo que hace una copia segura de los datos cada cierto tiempo. Facilita la tolerancia a fallos reduciendo el recálculo solo hasta el último checkpoint.
+
+Cada DStram está representado por una secuencia de RDDs que llegan en cada paso. **Cada RDD representa los datos recibidos durante un determinado periodo de tiempo** (especificado en la delaración del DStream)
+
+### Funcionamiento
+1. Se crea el StreamingContext (parecido al SparkContext pero con duración de procesos)
+2. Se van creando los DStream a partir del fichero de origen con la configuración del StreamingContext
+3. Se ejecutan operaciones sobre el DStream (que se harán sobre los RDD agrupados).
+
+Se comienza con `start()`, Se espera a que se procesen los DStream con `awaitTermination()`.
+
+Por supuesto, disponemos de WebUI.
+
+### Operaciones
+* Transformaciones: DStream->DStream.
+  * stateless: el procesamiento de cada lote no depende de los anteriores (lo que ya sabemos).
+  * stateful: sí depende (por ejemplo `updateStateByKey(function)`, que mantiene el estado a través de los batches mediante acceso a una variable "estado"). **No se pueden hacer sin tener checkpointing activado**.
+* Output Operations: Similares a acciones, escriben datos a sistemas externos.
+  * print, `saveAsTextFiles`, `saveAsObjectFiles`, `foreachRDD(function, time)`
+
+*Nota: Al estar pensado para aplicaciones batch, la interactividad es limitada. No se puede parar ni reiniciar el StreamingContext.*
+
+#### Operaciones windowed
+Computan resultados de periodos más largos que los intervalos batch del StreamingContext combinando resultado de más de un intervalo. Necesita de:
+* Window duration: cuántos batches previos hay que considerar (30 segundos si el batch es de 10 por ejemplo, se tendrían en cuenta los últimos 3 batches).)
+* Sliding duration: Con qué frecuencia se computan nuevos resultados (20 segundos si el batch es de 10 por ejemplo, se haría cada 2 batches)
+
+Aunque se pueden configurar con `window()`, Spark ya viene con un puñao, como `reduceByWindow()` o `reduceByKeyAndWindow()`.
+
+#### Otras cuestiones
+* Al estar diseñadas para ejecución continua, hay que tener en cuenta cosas como la acumulación de metadatos (otro buen uso del checkpointing).
+* Monitorización, por ejemplo StreamingListener.
+* Replicación de datos: recibidos por un único worker que se encarga de distribuirlos. El factor de replicación en *windowed* es 2. Si falla el receptor Spark se recoloca en otro worker (executor) - con pérdida de datos temporal.
