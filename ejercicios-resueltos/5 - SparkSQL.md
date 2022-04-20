@@ -173,3 +173,96 @@ Otros datos interesantes es que el Linares ha estado en 1ª o 2ª división en l
 
 ## 5.4 - Afianzar (Simpsons)
 
+El objetivo de este ejercicio es dado el dataset sobre puntuaciones de episodios de los simpson, crear un diagrama lineal en el que se vea gráficamente la puntuación media de cada temporada.
+
+1. Lo primero que hacemos tras cargar el archivo en hdfs es cargar la librería que nos permitirá dibujar una gráfica tal. Antes hay que realizar un par de configuraciones externas de compatibiliad:
+```
+$ echo 'export JAVA_TOOL_OPTIONS="-Dhttp.protocols=TLSv.1.2"' >> ~/.bashrc
+$ source ~/.bashrc
+$ spark-shell --packages com.databricks:spark-csv_2.10:1.5.0,org.sameersingh.scalaplot:scalaplot:0.0.4 // Importante hacerlo sin espacios.
+```
+
+2. A continuación y una vez cargadas las librerías, importamos las bibliotecas que hemos descargado.
+```
+scala> import org.sameersingh.scalaplot.Implicits._; import org.sameersingh.scalaplot.MemXYSeries; import org.sameersingh.scalaplot.XYData; import org.sameersingh.scalaplot.XYChart; import org.sameersingh.scalaplot.gnuplot.GnuplotPlotter // Como se puede ver estoy usando ; para ejecutar más de un comando en la misma línea. Esto no es del todo recomendable pero me apetecía mostrar que se puede hacer.
+```
+
+3. Ahora pasamos el archivo CSV a un DataFrame sobre el que podamos trabajar. Para ello tenemos que usar la biblioteca CSV que hemos importado.
+```
+scala> val df = sqlContext.read.format("com.databricks.spark.csv").option("header","true").option("inferSchema","true").load("simpsons.csv")
+```
+Como podemos comprobar, hemos añadido un par de opciones que determinan que hay una fila cabecera, y que queremos que infiera la estructura a partir de la misma.
+
+4. Ahora tenemos que ajustar algunos datos para poder trabajar con ellos:
+   * "Season" debería ser INT en vez de STRING.
+   * El DF debe estar ordenado de forma ascendente por temporada.
+   * Hemos calculado la media de puntuaciones también.
+```
+scala> val datos = df.withColumn("Season",col("Season").cast("int")).groupBy("Season").avg("imdb_rating").orderBy("Season")
+```
+
+5. Para poder trabajar de mejor manera con estos datos vamos a pasar el DF a un pairRDD, siendo la clave la temporada y el valor la puntuación media.
+```
+scala> val rdd = datos.rdd.map(line => (line.getInt(0), line.getDouble(1)))
+```
+
+6. Ahora para poder dibujar la gráfica vamos a separar la clave y el valor en variables x e y.
+```
+scala> val x = rdd.map({case(key,value) => key.toDouble})
+scala> val y = rdd.map({case(key,value) => value})
+```
+
+7. Lo siguiente es configurar la salida para obtener una imagen, pero antes de eso tenemos que instalar una herramienta que no está disponible en nuestra distribución.
+
+En este caso, lo que podemos hacer es instalarla manualmente a través de un paquete tar.gz ubicado en la [página de descarga de gnuplot](https://sourceforge.net/projects/gnuplot/files/gnuplot/5.4.2/gnuplot-5.4.2.tar.gz/download).
+
+La secuencia de comandos que debemos ejecutar para configurar e instalar esto (previo guardado del archivo descargable en nuestro sistema de archivos local) es el siguiente: nos dirigmos a la carpeta donde se haya el archivo .tar.gz que nos hemos descargado y lo descomprimimos.
+
+Entramos en la carpeta, y una vez allí, ejecutamos lo siguiente:
+```
+$ ./configure
+$ sudo make
+$ sudo make install
+```
+Una vez realizados estos tres arduos pasos, el programa `gnuplot` estará instalado y dispuesto para su uso.
+
+8. Ahora terminamos de configurar el archivo que nos llevará a la imagen, nuevamente en la consola de spark.
+```
+scala> val series = new MemXYSeries(x.collect(), y.collect(), "puntuacion")
+scala> val data = newXYData(series)
+scala> val chart = new XYChart("Media de puntuación de episodios de Los Simpsons durante sus temporadas",data)
+scala> output(PNG("docs/","test"),chart)
+```
+
+Ahora en la carpeta `/home/cloudera/docs` se ha creado un archivo que usando gnuplot permitirá su visualización. Lo único que nos queda por hacer es configurarlo correctamente, puesto que visualizarlo como PNG requiere una librería adicional.
+
+9. Entraremos al archivo "test.gpl" que acabamos de crear en la carpeta docs, y cambiamos lo siguiente:
+```
+# Chart settings
+set title "Media de puntuación de episodios de Los Simpsons durante sus temporadas"
+unset key
+set terminal png enhanced
+
+set terminal png enhanced
+
+set output "test.png"
+# XYChart settings
+```
+por
+```
+# Chart settings
+set title "Media de puntuación de episodios de Los Simpsons durante sus temporadas"
+unset key
+set terminal canvas
+
+set output "test.png"
+# XYChart settings
+```
+Guardamos el archivo.
+
+10. Por último, entramos en gnuplot desde otra terminal usando el comando `gnuplot` y una vez allí cargamos el fichero con `load` y la ruta absoluta:
+```
+gnuplot> load "/home/cloudera/docs/test.gpl"
+
+Y eso nos mostrará una gráfica muy bonita en ASCII. Lamentablemente no conozco manera de pasarlo a otro formato, pero ahí está.
+```
