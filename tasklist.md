@@ -13,13 +13,13 @@
 - [x] Resumen - Sqoop
 - [x] Día 3 - Flume
 - [x] Resumen - Flume
-- [ ] Resumen Tocho Spark
+- [x] Resumen Tocho Spark
 - [x] Ejercicios Spark Módulo 1
 - [x] Ejercicios Spark Módulo 2
 - [x] Ejercicios Spark Módulo 4
 - [x] Ejercicios Spark Módulo 4.1
-- [ ] Ejercicios Spark Módulo 5
-- [ ] Ejercicios Spark Módulo 6
+- [x] Ejercicios Spark Módulo 5
+- [x] Ejercicios Spark Módulo 6
 - [ ] Snippets útiles
   - [ ] Easy Word Count
   - [x] El tema del swap, sort, swap by ordenador
