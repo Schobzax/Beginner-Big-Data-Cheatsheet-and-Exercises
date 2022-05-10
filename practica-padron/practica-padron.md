@@ -499,8 +499,12 @@ scala> padron.write.format("parquet").partitionBy("DESC_DISTRITO","DESC_BARRIO")
 ```
 El árbol de ficheros y directorios generado es exactamente igual, excepto que se generan archivos parquet en lugar de archivos csv.
 
+En cuanto al tamaño generado: El primer csv que nos encontramos es de 74 KB; y el primer parquet es de 10 KB.
+
+En total, el tamaño de las carpetas generadas es de 6,9 MB para CSV y 1,21 MB para Parquet. Una reducción considerable en tamaño.
+
 ## 7. ¿Y si juntamos Spark y Hive?
 
 1. **Por último, prueba a hacer los ejercicios sugeridos en la parte de Hive con el csv "Datos Padrón" (incluyendo la importación con Regex) utilizando desde Spark EXCLUSIVAMENTE sentencias spark.sql, es decir, importar los archivos desde local directamente como tablas de Hive y haciendo todas las consultas sobre estas tablas sin transformarlas en ningún momento en DataFrames ni DataSets.**
 
-Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis.
+Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis. Pueden verse los resultados en el cuaderno de DataBricks asociado.
