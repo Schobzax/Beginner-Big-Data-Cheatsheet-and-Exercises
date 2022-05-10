@@ -46,18 +46,18 @@ hive> LOAD DATA LOCAL INPATH "/home/cloudera/share/Rango_Edades_Seccion_202204.c
 
 ```
 hive> CREATE TABLE padron_txt_2 AS SELECT
-    > trim(cod_distrito) as cod_distrito,
+    > cod_distrito,
     > trim(desc_distrito) as desc_distrito,
-    > trim(cod_dist_barrio) as cod_dist_barrio,
+    > cod_dist_barrio,
     > trim(desc_barrio) as desc_barrio,
-    > trim(cod_barrio) as cod_barrio,
-    > trim(cod_dist_seccion) as cod_dist_seccion,
-    > trim(cod_seccion) as cod_seccion,
-    > trim(cod_edad_int) as cod_edad_int,
-    > trim(espanoleshombres) as espanoleshombres,
-    > trim(espanolesmujeres) as espanolesmujeres,
-    > trim(extranjeroshombres) as extranjeroshombres,
-    > trim(extranjerosmujeres) as extranjerosmujeres
+    > cod_barrio,
+    > cod_dist_seccion,
+    > cod_seccion,
+    > cod_edad_int,
+    > espanoleshombres,
+    > espanolesmujeres,
+    > extranjeroshombres,
+    > extranjerosmujeres
     > FROM padron_txt;
 ```
 En realidad no es necesario hacer los trim de los valores enteros, pero me apetecía.
@@ -85,11 +85,9 @@ Y esto nos dejaría con la tabla padron_txt con los datos que hemos solicitado.
 
 6. **Una manera tremendamente potente de solucionar todos los problemas previos (tanto las comillas como los campos vacíos que no son catalogados como null y los espacios innecesarios) es utilizar expresiones regulares (regex) que nos proporciona OpenCSV. Para ello utilizamos `ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' WITH SERDEPROPERTIES ('input.regex'='XXXXXXX')` donde XXXXXX representa una expresion regular que debes completar y que identifique el formato exacto con el que debemos interpretar cada una de las filas de nuestro CSV de entrada. Para ello puede ser útil el portal "regex101". Utiliza este método para crear de nuevo la tabla padron_txt_2.**
 
-```
-hive> nah, de locos.
-```
+Ausencia por falta de expresión regular.
 
-Una vez finalizados todos estos apartados deberíamos tener una tabla padron_txt que conserve los espacios innecesarios, no tenga comillas envolviendo los campos y los campos nulos sean tratados como valor 0 y otra tabla padron_txt_2 sin espacios innecesarios, sin comillas envolviendo los campos y con los campos nulos como valor 0. Idealmente esta tabla ha sido creada con las regex de OpenCSV.
+**Una vez finalizados todos estos apartados deberíamos tener una tabla padron_txt que conserve los espacios innecesarios, no tenga comillas envolviendo los campos y los campos nulos sean tratados como valor 0 y otra tabla padron_txt_2 sin espacios innecesarios, sin comillas envolviendo los campos y con los campos nulos como valor 0. Idealmente esta tabla ha sido creada con las regex de OpenCSV.**
 
 ## 2. Investigamos el formato columnar parquet.
 
@@ -205,8 +203,6 @@ hive> CREATE TABLE padron_particionado (cod_distrito INT, desc_distrito STRING, 
 
 Antes de continuar, hay que mencionar que la máquina virtual en la que estamos trabajando no está correctamente configurada. Para conseguir que los datos del apartado siguiente se inserten correctamente, debe realizarse la siguiente configuración:
 
-2. **Insertar datos (en cada partición) dinámicamente (con Hive) en la tabla recién creada a partir de un select de la tabla padron_parquet_2.**
-
 ```
 hive> set hive.exec.dynamic.partition = true;
 hive> set hive.exec.dynamic.partition.mode = non-strict;
@@ -215,6 +211,11 @@ hive> set hive.exec.max.dynamic.partitions.pernode = 1000;
 hive> set mapreduce.map.memory.mb = 2048;
 hive> set mapreduce.reduce.memory.mb = 2048;
 hive> set mapreduce.map.java.opts = -Xmx1800m;
+```
+
+2. **Insertar datos (en cada partición) dinámicamente (con Hive) en la tabla recién creada a partir de un select de la tabla padron_parquet_2.**
+
+```
 hive> INSERT INTO padron_particionado PARTITION (desc_distrito, desc_barrio) SELECT cod_distrito, desc_distrito, cod_dist_barrio, desc_barrio, cod_barrio, cod_dist_seccion, cod_seccion, cod_edad_int, espanoleshombres, espanolesmujeres, extranjeroshombres, extranjerosmujeres, desc_distrito, desc_barrio (los campos) FROM padron_parquet_2;
 ```
 
@@ -242,8 +243,6 @@ La conclusión es que quizá el particionado es algo más rápido, pero no se co
 En ninguno de los dos sale ninguna row. Eso sí, lo hace increíblemente rápido, pero es preocupante.
 
 7. **Hacer consultas de agregación (Max, Min, Avg, Count) tal cual el ejemplo anterior con las 3 tablas (padron_txt_2, padron_parquet_2 y padron_particionado) y comparar rendimientos tanto en Hive como en Impala y sacar conclusiones.**
-
-Realmente esto lo tendría que rehacer, pero...
 
 Por lo que veo la eficiencia es varias magnitudes mayor en Impala que en Hive. Extrañamente, debido a la manera que tiene impala de trabajar, no se genera ninguna fila frente a Hive que... tampoco. No sé, algo pasa con el comando IN de la consulta que lo trastoca.
 
@@ -470,12 +469,6 @@ scala> pivotDF.withColumn("PorcentajeBarajas",(round(((col("BARAJAS"))/(col("BAR
 16.  **Guarda el archivo csv original particionado por distrito y por barrio (en ese orden) en un directorio local. Consulta el directorio para ver la estructura de los ficheros y comprueba que es la esperada.**
 
 ```
-scala> 
-```
-
-17.  **Haz el mismo guardado pero en formato parquet. Compara el peso del archivo con el resultado anterior.**
-
-```
 scala> padron.write.format("csv").partitionBy("DESC_DISTRITO","DESC_BARRIO").save("csv_thing/arquivo.csv")
 ```
 De esta manera se guarda en una carpeta llamada `csv_thing` dentro de la carpeta donde estemos. El árbol resultante es el siguiente (`(d)` determina que es un directorio):
@@ -499,8 +492,15 @@ csv_thing
 ```
 Más o menos así, por dotar de un resumen. El archivo `part-00000-etcétera` es el que contiene el csv correspondiente a ese barrio. Importante destacar que no aparecen las columnas DESC_DISTRITO ni DESC_BARRIO; ni por supuesto la cabecera.
 
+17.  **Haz el mismo guardado pero en formato parquet. Compara el peso del archivo con el resultado anterior.**
+
+```
+scala> padron.write.format("parquet").partitionBy("DESC_DISTRITO","DESC_BARRIO").save("parquet_thing/arquivo.parquet")
+```
+El árbol de ficheros y directorios generado es exactamente igual, excepto que se generan archivos parquet en lugar de archivos csv.
+
 ## 7. ¿Y si juntamos Spark y Hive?
 
 1. **Por último, prueba a hacer los ejercicios sugeridos en la parte de Hive con el csv "Datos Padrón" (incluyendo la importación con Regex) utilizando desde Spark EXCLUSIVAMENTE sentencias spark.sql, es decir, importar los archivos desde local directamente como tablas de Hive y haciendo todas las consultas sobre estas tablas sin transformarlas en ningún momento en DataFrames ni DataSets.**
 
-Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis. No tiene mayor complicación así que no se va a realizar, pues daría problemas de compatibilidad.
+Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis.
