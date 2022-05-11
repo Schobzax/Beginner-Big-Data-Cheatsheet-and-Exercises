@@ -60,7 +60,6 @@ hive> CREATE TABLE padron_txt_2 AS SELECT
     > extranjerosmujeres
     > FROM padron_txt;
 ```
-En realidad no es necesario hacer los trim de los valores enteros, pero me apetecía.
 
 4. **Investigar y entender la diferencia de incluir la palabra LOCAL en el comando DATA.**
 
@@ -85,7 +84,29 @@ Y esto nos dejaría con la tabla padron_txt con los datos que hemos solicitado.
 
 6. **Una manera tremendamente potente de solucionar todos los problemas previos (tanto las comillas como los campos vacíos que no son catalogados como null y los espacios innecesarios) es utilizar expresiones regulares (regex) que nos proporciona OpenCSV. Para ello utilizamos `ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' WITH SERDEPROPERTIES ('input.regex'='XXXXXXX')` donde XXXXXX representa una expresion regular que debes completar y que identifique el formato exacto con el que debemos interpretar cada una de las filas de nuestro CSV de entrada. Para ello puede ser útil el portal "regex101". Utiliza este método para crear de nuevo la tabla padron_txt_2.**
 
-Ausencia por falta de expresión regular.
+Se haría algo como esto (créditos a [@Félix Conde Marrón] por proveer la solución)
+```
+hive> CREATE TABLE padron_txt_2 (
+    > cod_distrito INT,
+    > desc_distrito STRING,
+    > cod_dist_barrio INT,
+    > desc_barrio STRING,
+    > cod_barrio INT,
+    > cod_dist_seccion INT,
+    > cod_seccion INT,
+    > cod_edad_int INT, 
+    > EspanolesHombres INT, 
+    > EspanolesMujeres INT,
+    > ExtranjerosHombres INT,
+    > ExtranjerosMujeres INT
+    > )
+    > ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
+    > WITH SERDEPROPERTIES ('input.regex' = '\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"\\;*\\"(\\w*)\\s*\\"')
+    > STORED AS TEXTFILE
+    > TBLPROPERTIES ('skip.header.line.count' = '1');
+```
+
+El único asunto es que en este caso los espacios vacíos se devuelven como NULL y habría que pasarlos a 0.
 
 **Una vez finalizados todos estos apartados deberíamos tener una tabla padron_txt que conserve los espacios innecesarios, no tenga comillas envolviendo los campos y los campos nulos sean tratados como valor 0 y otra tabla padron_txt_2 sin espacios innecesarios, sin comillas envolviendo los campos y con los campos nulos como valor 0. Idealmente esta tabla ha sido creada con las regex de OpenCSV.**
 
@@ -133,7 +154,7 @@ Los tamaños obtenidos son los siguientes:
 
 Puede deducirse que Parquet es mucho más eficiente en tamaño; y también que el número de espacios no influye en el tamaño del almacenamiento.
 
-Nota: Igual no es la manera correcta de hacerlo.
+*Nota: Igual no es la manera correcta de hacerlo y hay otra manera más directa de obtener el tamaño de una tabla.*
 
 ## 3. Juguemos con Impala
 
@@ -240,11 +261,23 @@ La conclusión es que quizá el particionado es algo más rápido, pero no se co
 
 6. **Llevar a cabo la consulta en Impala en las tablas padron_parquet y padron_particionado. ¿Alguna conclusión?**
 
-En ninguno de los dos sale ninguna row. Eso sí, lo hace increíblemente rápido, pero es preocupante.
+Debido al hecho de que una de las tablas tiene espacios en blanco y la otra no, se ha decidido hacer la consulta en padron_parquet_2 y padron_particionado, ya que ambas pueden ser comparables en eficiencia porque se puede usar la misma consulta. (IN no permite el uso de comodines en Impala).
 
-7. **Hacer consultas de agregación (Max, Min, Avg, Count) tal cual el ejemplo anterior con las 3 tablas (padron_txt_2, padron_parquet_2 y padron_particionado) y comparar rendimientos tanto en Hive como en Impala y sacar conclusiones.**
+* Impala-padron_parquet: Un total de 4.24s.
+* Impala-padron_particionado: Un total de 0.48s.
 
-Por lo que veo la eficiencia es varias magnitudes mayor en Impala que en Hive. Extrañamente, debido a la manera que tiene impala de trabajar, no se genera ninguna fila frente a Hive que... tampoco. No sé, algo pasa con el comando IN de la consulta que lo trastoca.
+La conclusión a la que se llega es que un particionado eficaz resulta en un gran aumento de la eficiencia en las consultas.
+
+1. **Hacer consultas de agregación (Max, Min, Avg, Count) tal cual el ejemplo anterior con las 3 tablas (padron_txt_2, padron_parquet_2 y padron_particionado) y comparar rendimientos tanto en Hive como en Impala y sacar conclusiones.**
+
+### Tabla de tiempos totales de ejecución
+
+| Sys    | padron_txt_2 | padron_parquet_2 | padron_particionado |
+| ------ | ------------ | ---------------- | ------------------- |
+| Hive   | 43.408 s     | 40.049 s         | 40.442 s            |
+| Impala | 4.15s        | 0.30s            | 0.69s               |
+
+La conclusión a la que se llega aquí es sobre todo una de eficiencia motora: Hive, al iniciar los servicios en cada consulta, tiene un tiempo mucho mayor de ejecución; mientras que con Impala ya quedan iniciados (bien es cierto que Impala se inicia mucho más rápido que Hive de por sí, lo cual resulta curioso). Por otro lado, el formato parquet provee de una eficiencia no disponible en otros formatos, que Impala sabe aprovechar mejor que Hive.
 
 ## 5. Trabajando con tablas en HDFS.
 A continuación vamos a hacer una inspección de las tablas, tanto externas (no gestionadas) como internas (gestionadas). Este apartado se hará si se tiene acceso y conocimiento previo sobre cómo insertar datos en HDFS.
@@ -365,7 +398,7 @@ scala> val padron = spark.read.format("csv").option("quote","\"").option("sep","
 
 2. **De manera alternativa también se puede importar el csv con menos tratamiento en la importación y hacer todas las modificaciones para alcanzar el mismo estado de limpieza de los datos con funciones de Spark.**
 
-Sí, de manera alternativa podría hacerse, pero sería más complicado. Además, ya lo he hecho a medias.
+Sí, se podría.
 
 3. **Enumera todos los barrios diferentes.**
 
@@ -507,4 +540,4 @@ En total, el tamaño de las carpetas generadas es de 6,9 MB para CSV y 1,21 MB p
 
 1. **Por último, prueba a hacer los ejercicios sugeridos en la parte de Hive con el csv "Datos Padrón" (incluyendo la importación con Regex) utilizando desde Spark EXCLUSIVAMENTE sentencias spark.sql, es decir, importar los archivos desde local directamente como tablas de Hive y haciendo todas las consultas sobre estas tablas sin transformarlas en ningún momento en DataFrames ni DataSets.**
 
-Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis. Pueden verse los resultados en el cuaderno de DataBricks asociado.
+Este ejercicio puede realizarse simplemente añadiendo `spark.sql()` y metiendo cada consulta realizada entre los paréntesis. Debido a circunstancias e incompatibilidad, se ha realizado en la consola local y ha funcionado perfectamente tal cual como se ha explicado: incluyendo los comandos Hive dentro de "`spark.sql()`".
