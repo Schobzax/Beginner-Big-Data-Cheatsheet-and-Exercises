@@ -14,7 +14,7 @@ Por otro lado, hay algunos comandos que pueden usarse en ambos lados pero están
 | Comando | Python | Spark |
 | ------- | ------ | ----- |
 | Declaración de variables | `ejemplo = [valor]` | `val ejemplo = [valor]` |
-| display | `df.display()` | `display(df)` |
+| display [^display] | `df.display()` | `display(df)` |
 | print | `print()` | ``println()`` |
 | print variable | `print("%d" % [variable/operacion])` | `print(s"$variable")` |
 | Llamar a columnas | `col("nom_colum")`, `"nom_colum"`, `df.nom_column` | lo otro además de `$"nom_colum"` |
@@ -34,6 +34,7 @@ Por otro lado, hay algunos comandos que pueden usarse en ambos lados pero están
 | Pandas | Ye | Nope |
 | Import Window | `from pyspark.sql.window import Window` | `import org.apache.spark.sql.expressions.Window` |
 
+[^display]: Por lo visto `display(df)` funciona en python también. No lo sabía. Pero es cierto que lo de python no funciona en scala.
 [^import]: La biblioteca concreta podría variar pero la sintaxis general es más o menos esa.
 [^comp]: No del todo acertado, seguramente haya otras cuestiones asociadas al por qué son tres pero en mi experiencia personal he usado tres en Scala y dos en Python y por eso está puesto ahí.
 [^row]: Basado en una cosa que escribí y que en verdad no está bien, pero en esencia lo que significa es que para Scala tienes que especificar el tipo. O algo.
