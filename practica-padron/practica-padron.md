@@ -386,7 +386,7 @@ Por otro lado, `CREATE EXTERNAL TABLE` si se indica `LOCATION` almacena los dato
 ## 6. Un poquito de Spark
 La siguiente sección de la práctica se abordará si ya se tienen suficientes conocimientos de Spark, en concreto en el manejo de DataFrames, y el manejo de tablas de Hive a través de Spark.sql.
 
-*Esta sección de la cosa esta se va a realizar en local
+*Esta sección se ha realizado en Databricks.*
 
 1. **Comenzamos realizando la misma práctica que hicimos en Hive en Spark, importando el csv. Sería recomendable intentarlo con opciones que quiten las "" de los campos, que ignoren los espacios innecesarios en los campos, que sustituyan los valores vacíos por 0 y que infiera el esquema.**
 
