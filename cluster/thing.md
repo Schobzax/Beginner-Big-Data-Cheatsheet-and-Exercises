@@ -273,4 +273,215 @@ $ hdfs dfs -rm /datos4/f1.txt
 $ hdfs dfs -cp /datos4/.snapshot/s1/f1.txt /datos4/ -- Este es el método.
 ```
 
-## 16. Chapter 5 lo vamos viendo adios
+## 15.9 Supresión de warnings
+```
+export HADOOP_HOME_WARN_SUPPRESS=1
+export HADOOP_ROOT_LOGGER="WARN,DRFA"
+```
+
+## 16. YARN
+Nuevamente en /opt/hadoop/etc/hadoop, tenemos que modificar el archivo `mapred-site.xml`:
+
+```
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+```
+
+Antes de modificar el siguiente, ejecutamos `hadoop classpath` y copiamos el resultado.
+
+Y también tenemos que modificar el archivo `yarn-site.xml`:
+```
+<configuration>
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>nodo1</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
+        <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+    </property>
+    <property>
+        <name>yarn.application.classpath</name>
+        <value>
+            [el valor de lo copiado en hadoop classpath, que es un churro bastante voluminoso]
+        </value>
+    </property>
+
+</configuration>
+```
+
+Y por último, iniciamos, `start-dfs.sh` y `start-yarn.sh`.
+
+Esto crea una interfaz web accesible por el puerto 8088, con información de yarn.
+
+Por último, hay que ejecutar el comando `mapred --daemon start historyserver` para temas del historial.
+
+* Resumiendo, a partir de ahora cada vez que iniciemos:
+`start-dfs.sh`, `start-yarn.sh`, `mapred --daemon start historyserver`.
+
+* Y para pararlo: `stop-dfs.sh`, `stop-yarn.sh`, `mapred --daemon stop historyserver`.
+
+## 17. Ejemplo quijote
+Tenemos que poner el archivo quijote.txt en la carpeta que prefiramos y bueno esta parte ya te la sabes cómo va lo de los archivos.
+```
+$ hdfs dfs -mkdir /libros
+$ hdfs dfs -put quijote.txt /libros
+$ hadoop jar /opt/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.2.jar wordcount /libros /salida_libros
+$ hdfs dfs -get /salida_libros/part-r-00000 palabras.txt
+```
+
+## 18. Ejemplo contar palabras (java)
+Para la ejecución de archivos java, lo primero que hay que hacer es `export HADOOP_CLASSPATH=/usr/java/jdk1.8.0_331/lib/tools.jar`.
+
+### Compilación
+* `javac ContarPalabras.java -cp $(hadoop classpath)`
+
+### Creación del jar
+* `jar cf ContarPalabras.jar Contar*.class`
+
+### Ejecución
+* `hadoop jar ContarPalabras.jar ContarPalabras /temporal/access_log /salidaLog`
+
+## 19. Ejemplo con Mapper y Reducer en Python
+Creamos los dos archivos python nativamente tal y como pone en el pdf (por reducir espacio no se ponen aquí). *Crearlos nativamente en la propia máquina virtual es la mejor manera de evitar problemas de compatibilidad, terminaciones de líneas, encoding, etcétera.*
+
+Después ejecutamos `hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.2.jar -file pymap.py -mapper pymap.py -file pyreduce.py -reducer pyreduce.py -input /libros/quijote.txt -output /resultado4`
+
+## 20. Clonación
+Para clonar el nodo Hadoop debemos configurar:
+
+* Red: El Adaptador 2 es una red interna con nombre intnet.
+
+Y luego a la hora de clonar hay que configurarlo todo para que no repita nada: En MAC generar nuevas direcciones, y no marcar nada de mantener nombres o UUIDs.
+
+Cambiarle el nombre a nodo2 y escoger "Estado actual de la máquina" (eso sale porque he estado haciendo instantáneas).
+
+## 21. Configuración de la red
+A partir de ahora hay que hacer ciertas cosas tanto en nodo2 como en nodo3. Lo único que hay que hacer es cambiar donde se vea nodo2 por nodo3 y ya está. Lo demás es todo igual solo que hay que ejecutarlo dos veces, una en cada nodo.
+
+**Es muy importante que las tres máquinas virtuales estén conectadas a la red interna para esta parte.**
+
+### Nombre
+
+Lo primero que vamos a hacer es cambiarle los nombres, y para que esto sea permanente lo vamos a apuntar en `/etc/hostname`.
+
+De esta manera, accedemos mediante `sudo gedit /etc/hostname` y escribimos nodo2 o nodo3 sustituyendo a nodo1 en el nodo correspondiente.
+
+### Sysconfig
+En cada uno de los tres nodos, hacemos `sudo gedit /etc/sysconfig/network`. Nos aparecerá como texto `# created by anaconda`. Lo borramos. Escribimos lo siguiente:
+```
+NETWORKING=yes
+HOSTNAME=nodoX (siendo X 1, 2 o 3 dependiendo del nodo)
+```
+
+### Hosts
+Hacemos lo propio con /etc/hosts, que en cada uno de los tres nodos debe tener el mismo contenido:
+
+```
+127.0.0.1     localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1           localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.0.101 nodo1
+192.168.0.102 nodo2
+192.168.0.103 nodo3
+```
+Y luego nos dirigimos a la configuración de red y le asignamos la IPv4 manual correspondiente al nodo (101, 102 o 103, como se ve en el archivo /etc/hosts). Máscara: 255.255.255.0, Puerta de enlace: 192.168.0.1.
+
+Reiniciamos los tres nodos para que se guarde la confi. Después comprobamos con ping que todos los nodos están conectados entre sí y que todo se ha hecho correctamente.
+
+### SSH
+En cada uno de los nodos (los tres) hay que hacer lo siguiente:
+
+1. Borrar el contenido del fichero /home/hadoop/.ssh
+2. Nos conectamos al nodo2 y al nodo3 mediante ssh desde el nodo1 para añadirlos a la lista de known hosts.
+3. El vídeo recomienda tres pestañas, una para cada nodo, conectándose como se ha dicho.
+4. Nos metemos en la carpeta .ssh de cada nodo.
+5. Ejecutamos `ssh-keygen` en cada uno de los nodos.
+
+Ahora en el nodo1 hacemos `cp id_rsa.pub authorized_keys` y lo hacemos circular:
+```
+$ scp authorized_keys nodo2:/home/hadoop/.ssh
+```
+Y allí hacemos `cat id_rsa.pub >> authorized_keys` para que se añada al final del fichero. Esto lo pasamos al nodo3 con el mismo comando de arriba, y este último se pasa al nodo1 y al nodo2.
+
+*Nota: Para que SSH funcione correctamente, hay que ejecutar `chmod 600 authorized_keys` en el propio directorio .ssh, para que los permisos los tenga el propio nodo. Si no se hace así, SSH se pone nervioso y no funciona.
+
+### Ficheros de configuración de los nodos
+Hay que borrar según qué carpetas: en los nodos 2 y 3 hay que borrar el `/datos/namenode`, porque eso solo está en el nodo maestro. También hay que borrar `/datos/datanode/current` en los nodos *worker*, porque es una copia y los vamos a recrear.
+
+El nodo1 (nodo maestro) es al revés: hay que borrar el datanode.
+
+Ahora hay que configurar ciertos archivos:
+
+#### hdfs-site.xml
+Cambiar `dfs.replication` de 1 a 2. (Porque ahora tenemos dos nodos).
+
+Para transferirlo a los nodos worker se hace mediante `scp hdfs-site.xml nodox:/opt/hadoop/etc/hadoop/`.
+
+El resto de archivos no hay que tocarlos, se quedan igual.
+
+#### workers
+Aquí se pone
+```
+nodo2
+nodo3
+```
+Los nombres (identificadores) de los nodos worker.
+
+### Últimos pasos
+1. Quitar el cortafuegos. En CentOS 7 es más complicado, pero se puede hacer así:
+```
+$ sudo systemctl stop firewalld // lo detiene para esta sesión.
+$ sudo systemctl disable firewalld // previene que se inicie en siguientes sesiones.
+
+// Para comprobar el estado (por si otro servicio lo encendiera):
+sudo firewall-cmd --state
+```
+He rehusado esconderlo ante otros servicios porque me parece una medida demasiado drástica, pero sería con `sudo systemctl mask --now firewalld`. 
+
+Esto nuevamente debemos hacerlo en los tres nodos.
+
+2. Por último, formateamos con `hdfs namenode -format` (nos preguntará si sobreescribimos, que sí)
+
+## 22. Arranque
+El arranque arranca más procesos de forma automática. Luego el jps visualiza distintos según el nodo. Aquí no hay que modificar nada respecto al arranque tradicional.
+
+En un maestro estarían: ResourceManager, JobHistoryServer, SecondaryNameNode, Jps y NameNode.
+
+En un nodo esclavo estarían: NodeManager, Jps y DataNode.
+
+Y bueno, ya es cuestión de hacer pruebas y la gracia es ver su funcionamiento en el modo gráfico que mola mucho.
+
+## 23. Ejercicios prueba
+
+### Primer ejercicio
+
+* `hdfs dfs -mkdir /practicas` y tal.
+* `hdfs dfs -put cite75_99.txt /practicas` para meter el archivo.
+* Creamos un archivo `MyJob.java` según el contenido del pdf.
+* Exportamos la librería para el classpath: `export HADOOP_CLASSPATH=$JAVA_HOME/lib/tools.jar`
+* Compilamos: `hadoop com.sun.tools.javac.Main MyJob.java` y creamos el JAR `jar cvf MyJob.jar My*`
+
+Finalmente ejecutamos el job: `hadoop jar MyJob.jar MyJob /practicas/cite75_99.txt /resultado7`
+
+### Segundo ejercicio: streaming mediante comandos de linux
+
+* `hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.2.jar -input /practicas/cite75_99.txt -output /resultado8 -mapper 'cut -f 2 -d ,' -reducer 'uniq'`: con reducer
+* `hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.2.jar -D mapred.reduce.tasks=0 -input /practicas/cite75_99.txt -output /resultado9 -mapper 'wc -l'`: sin reducer
+
+Todo esto se puede ver muy bien en la interfaz web el proceso y tal y mola mucho.
+
+### Tercer ejercicio: Python
+
+* `hadoop jar/opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.2.jar -D mapred.job.reducers=1 -input /practicas/cite75_99.txt -output /resultado11 -mapper 'rand.py 1' -file rand.py`
+
+**Segundo error: En el papel pone `-mapper 'rand.py'` pero esto lleva a error a no ser que se incluya el 1. Seguramente no esté haciendo ni lo mismo, pero no sé a qué se debe el error.**
+
+## 24. Más cosas
