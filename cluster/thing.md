@@ -484,4 +484,303 @@ Todo esto se puede ver muy bien en la interfaz web el proceso y tal y mola mucho
 
 **Segundo error: En el papel pone `-mapper 'rand.py'` pero esto lleva a error a no ser que se incluya el 1. Seguramente no esté haciendo ni lo mismo, pero no sé a qué se debe el error.**
 
-## 24. Más cosas
+## 24. Gestión del cluster
+* El comando `yarn` tiene muchas opciones muy útiles seguro para quien sepa lo que está haciendo.
+* `yarn application` muestra las aplicaciones activas.
+* `yarn container` muestra los contenedores que han ejecutado las aplicaciones.
+* `yarn node` muestra información de los nodos con los que estamos trabajando.
+* `yarn applicationattempt` muestra los intentos de ejecución de cada aplicación.
+
+Cada una tiene una serie de opciones muy interesantes. Por ejemplo, `-list`, que muestra una lista.
+
+Mencionar que solo se mostrarán datos activos; es decir, aplicaciones que se están ejecutando en el momento concreto en que se usa el comando. También se pueden chapar aplicaciones con `yarn application -kill <id>`, para aplicaciones que vemos que van a tardar mucho o que no van bien.
+
+## 25. Yarn Scheduler
+También es muy interesante.
+* `mapred queue -list` muestra las colas de dicho scheduler, con lo que se está ejecutando y tal.
+
+La configuración es importante hacerla bien: El Capacity Scheduler.
+
+### Capacity Scheduler
+* `gedit capacity-scheduler.xml` en el fichero donde están todos los xml a configurar.
+
+Una vez dentro tenemos que modificar según qué propiedades, que lo haremos varias veces durante estas prácticas.
+```
+<property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>default,prod,desa</value>
+    <description>
+        lo que ponga aquí que no nos interesa.
+    </description>
+</property>
+```
+
+Y luego hay que hacer un poquito de matemáticas: por cada nivel del árbol de colas (mirarse la teoría que viene muy bien explicado):
+```
+<property>
+    <name>yarn.scheduler.capacity.root.[nombrecola].capacity</name>
+    <value>[numero entre el 1 y el 100]</value>
+    <description>Capacidad de la cosa esta.</description>
+</property>
+```
+
+Y entre todas las colas tienen que sumar 100. O entre todas las subcolas por sí solas. Esas cosas.
+
+En este caso se queda una cosa así:
+```
+  <property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>default,prod,desa</value>
+    <description>
+      The queues at the this level (root is the root queue).
+    </description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.default.capacity</name>
+    <value>30</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.capacity</name>
+    <value>50</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.desa.capacity</name>
+    <value>20</value>
+    <description>Default queue target capacity.</description>
+  </property>
+```
+
+* Para actualizar las cosas (necesario), `yarn rmadmin -refreshQueues`.
+
+### Subcolas
+Te muestro tal cual un ejemplo de subcolas para que lo veas. Hemos añadido dos subcolas a prod.
+
+```
+  <property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>default,prod,desa</value>
+    <description>
+      The queues at the this level (root is the root queue).
+    </description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.queues</name>
+    <value>warehouse,batch</value>
+    <description>
+      The queues at the this level (root is the root queue).
+    </description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.default.capacity</name>
+    <value>30</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.capacity</name>
+    <value>50</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.warehouse.capacity</name>
+    <value>40</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.batch.capacity</name>
+    <value>60</value>
+    <description>Default queue target capacity.</description>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.capacity.root.desa.capacity</name>
+    <value>20</value>
+    <description>Default queue target capacity.</description>
+  </property>
+```
+
+* Muy importante: Debido a la estructura hay colas funcionando que vamos a actualizar así que no podemos refrescar las colas: tendremos que reiniciar el clúster. (Stop y luego Start como aparece un poco más arriba).
+
+Por último, como demostración del funcionamiento de las colas ejecutamos `hadoop jar /opt/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.2.jar wordcount -Dmapred.job.queue.name=warehouse /practicas/cite75_99.txt /salida16`.
+
+### Ejemplo
+* El ejemplo indica {default,10},{rrhh,50},{marketing,20},{ventas,20} - lo cual es fácil de hacer. En el mismo archivo que hemos estado modificando hasta ahora (capacity-scheduler.xml):
+```
+<property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>default,rrhh,marketing,ventas</value>
+    <description>Lo que ponga aquí.</description>
+</property>
+
+<property>
+    <name>yarn.scheduler.capacity.root.default.capacity</name>
+    <value>10</value>
+    <description>Capacidad de la cola default</description>
+</property>
+
+<property>
+    <name>yarn.scheduler.capacity.root.rrhh.capacity</name>
+    <value>50</value>
+    <description>Capacidad de la cola rrhh</description>
+</property>
+
+<property>
+    <name>yarn.scheduler.capacity.root.marketing.capacity</name>
+    <value>20</value>
+    <description>Capacidad de la cola marketing</description>
+</property>
+
+<property>
+    <name>yarn.scheduler.capacity.root.ventas.capacity</name>
+    <value>20</value>
+    <description>Capacidad de la cola ventas</description>
+</property>
+```
+
+Debido a la magnitud del cambio (básicamente que estamos cambiando cosas en ejecución), tendremos que reiniciar el clúster nuevamente.
+
+## 26. Instalación de Hive
+
+1. Nos descargamos la última versión de Hive en [la página de Hive](hive.apache.org). En mi caso estoy utilizando la versión 3.1.3.
+
+2. Una vez tenemos el archivo, lo descomprimimos en /opt/hadoop (nos colocamos allí): `tar xvf /home/hadoop/Descargas/apache-hive-3.1.3.bin.tar.gz` y luego lo renombramos para facilidad de uso con `mv apache-hive-3.1.3-bin/ hive`.
+
+3. Después tenemos que modificar el .bashrc, añadiendo `export HIVE_HOME=/opt/hadoop/hive` antes del path y luego añadiendo `$HIVE_HOME/bin` al path.
+
+4. Ahora hay que meterse en la configuración de los xml, para lo cual  `cd hive/conf` (estando en /opt/hadoop/hive/conf).
+
+5. Como veremos casi todo son templates que no podemos usar directamente, sino que debemos copiarlas a un archivo estándar eliminándoles la terminación template.
+
+### hive-default.xml
+* `cp hive-default.xml.template hive-site.xml`, en el mismo directorio. A este le hemos cambiado el nombre porque sí.
+
+Hay que añadir un par de propiedades al principio del documento:
+```
+  <property>
+    <name>system:java.io.tmpdir</name>
+    <value>/tmp/hive/java</value>
+  </property>
+  <property>
+    <name>system:user.name</name>
+    <value>${user.name}</value>
+  </property>
+```
+
+Además debemos solucionar un error localizado en la línea 3224 en la columna 96: hay un caracter extraño en una descripción. Al ser en una descripción, podemos borrarlo sin ningún problema.
+
+### hive-env.sh.template
+* `cp hive-env.sh.template hive-env.sh`
+
+Entramos y definimos dos variables:
+```
+export HADOOP_HOME=/opt/hadoop
+export HIVE_CONF_DIR=/opt/hadoop/hive/conf
+```
+
+### hive-exec-log4j2.properties
+* `cp hive-exec-log4j2.properties.template hive-exec-log4j2.properties`
+
+### hive-log4j2.properties
+* `cp hive-log4j2.properties.template hive-log4j2.properties`
+
+### beeline-log4j2.properties
+* `cp beeline-log4j2.properties.template beeline-log4j2.properties`
+
+## 27. Configuración de HDFS para Hive
+Hay que crear unos directorios (o tenerlos creados) en HDFS para que no falle la cosa.
+
+* `hdfs dfs -mkdir /tmp`, con permisos `hdfs dfs -chmod g+w /tmp`.
+* `hdfs dfs -mkdir -p /user/hive/warehouse`, con permisos `hdfs dfs -chmod g+w /user/hive/warehouse`
+
+Creamos una carpeta /opt/hadoop/hive/bbdd, y dentro lanzamos el comando `schematool -dbType derby -initSchema`, que inicializa el schema en la carpeta correspondiente de la base de datos por defecto.
+
+**Es posible que de error de schematool: command not found. Se debería solucionar cerrando la terminal y abriendo otra nueva.**
+
+Imprime un montón de líneas vacías. Eso es un poco raro.
+
+Debería aparecer `schemaTool completed`, finalmente.
+
+## 28. Creación de cosas en la base de datos hive (un poco lo que vamos haciendo ahí dentro)
+Como curiosidad, se crea un directorio con la base de datos dentro de la carpeta warehouse en HDFS, por ejemplo: `/user/hive/warehouse/ejemplo.db/` y ahí dentro pues carpetas para las tablas y tal. Y dentro pues ficheros numéricos que al hacerle cat tiene el contenido de parte de la tabla.
+
+En este apartado no voy a explicar mucho de hive porque ya lo hemos hecho antes.
+
+* `hive> create database ejemplo;`
+* `hive> use ejemplo;` -- muy importante estar en la base de datos concreta, no te mete automáticamente.
+* `hive> create table if not exists t1 (name string);`
+* `hive> insert into t1 values ('mi nombre');`
+* `hive> create table t2 (codigo integer);`
+* `hive> insert into t2 values(10);`
+
+### Tablas internas
+
+Ahora con un ejemplo más complejo, vamos a crear un archivo de texto en otro lugar con el formato `[nombre],[edad]`, con una coma en medio para separar los valores. Uno por línea, a decisión propia. Por ejemplo, sería algo así (desde fuera de hive): `gedit empleados.txt`
+```
+juan,28
+maría,33
+...
+```
+
+Y para introducir estos datos pues creamos una tabla tal que así: `hive> create table empleados(nombre string, edad integer) row format delimited fields terminated by ',';`
+
+Ahora, para cargar los datos, se ejecuta `load data local inpath '/home/hadoop/empleados.txt into table empleados;`. Asumimos que se sabe lo que significa este comando así que no voy a explicarlo.
+
+Para propósitos ilustrativos, se dirá que hive lee todos los contenidos de la carpeta asociada (/user/hive/warehouse/ejemplo.db/empleados) y que al borrar la tabla se borra el contenido de esa carpeta.
+
+### Tablas externas
+Por otro lado tenemos las tablas externas.
+
+* `hive> drop table empleados;` (vamos a recrearla)
+* Introducimos el archivo en el sistema en `hdfs dfs -put empleados.txt /prueba`
+* `hive> create external table empleados (nombre string, edadinteger) row format delimited fields terminated by ',' location '/user/hive/datos/empleados'` (carpeta que se crea automáticamente. Location determina la localización de los datos)
+* `hive> load data inpath '/prueba/empleados.txt'`.
+
+La diferencia con una tabla interna radica en que al dropear la tabla los datos permanecen en la localización designada en `location`.
+
+## 29. Ejercicio
+```
+hive> CREATE TABLE IF NOT EXISTS empleados_internal
+    > (
+    >   name string,
+    >   work_place ARRAY<string>,
+    >   sex_age STRUCT<sex:string,age:int>,
+    >   skills_score MAP<string,int>,
+    >   depart_title MAP<STRING,ARRAY<STRING>>
+    > )
+    > COMMENT 'This is an internal table'
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY '|'
+    > COLLECTION ITEMS TERMINATED BY ','
+    > MAP KEYS TERMINATED BY ':';
+```
+Y cargamos los datos con `hive> LOAD DATA LOCAL INPATH '/home/hadoop/ejercicios/empleados.txt' OVERWRITE INTO TABLE empleados_internal;` (el archivo empleados.txt está disponible en el curso, el que vamos a usar ahora lo vamos a guardar en la carpeta ejercicios -- pero vamos lo que queráis no soy vuestro padre)
+
+Y luego para la tabla externa igual
+```
+hive> CREATE EXTERNAL TABLE IF NOT EXISTS empleados_external
+    > (
+    >   name string,
+    >   work_place ARRAY<string>,
+    >   sex_age STRUCT<sex:string,age:int>,
+    >   skills_score MAP<string,int>,
+    >   depart_title MAP<STRING,ARRAY<STRING>>
+    > )
+    > COMMENT 'This is an external table'
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY '|'
+    > COLLECTION ITEMS TERMINATED BY ','
+    > MAP KEYS TERMINATED BY ':'
+    > LOCATION '/ejemplo/empleados';
+```
+Y luego cargamos con `LOAD DATA LOCAL INPATH '/home/hadoop/ejercicios/empleados.txt' OVERWRITE INTO TABLE empleados_external;`.
+
+Por último, y pasando un poco de las comprobaciones (lo dejo al lector que debería ir siguiendo la cosa) dropeamos las dos tablas. Los datos de la externa se quedarán, no así los de la interna.
