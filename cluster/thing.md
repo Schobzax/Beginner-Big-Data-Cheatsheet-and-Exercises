@@ -784,3 +784,57 @@ hive> CREATE EXTERNAL TABLE IF NOT EXISTS empleados_external
 Y luego cargamos con `LOAD DATA LOCAL INPATH '/home/hadoop/ejercicios/empleados.txt' OVERWRITE INTO TABLE empleados_external;`.
 
 Por último, y pasando un poco de las comprobaciones (lo dejo al lector que debería ir siguiendo la cosa) dropeamos las dos tablas. Los datos de la externa se quedarán, no así los de la interna.
+
+## 30. Beeline
+Lo primero que tenemos que hacer antes de empezar a trabajar con beeline es modificar una propiedad muy concreta de beeline para poder realizar ejecuciones "anónimas". Tenemos que dirigirnos al fichero `/opt/hadoop/hive/conf/hive-site.xml` y cambiar la propiedad "hive.server2.enable.doAs" por "false".
+
+**Tercer error: A mí me ha salido aleatoriamente. No sé muy bien por qué funciona o por qué deja de funcionar.**
+
+### El ejercicio de deslizamientos de tierra
+Pues ya es cuestión de hacerlo. Ahí no me voy a meter, se deja como ejercicio para el lector.
+
+Sí debo advertir que la ultimísima parte de Excel no funciona del todo correctamente en Excel 365 (o no he encontradoals opciones), porque parece que la interfaz web está un poco limitada respecto a la versión de escritorio, de la que carezco.
+
+## 31. Hue
+
+### Instalación
+Seguir paso a paso esta guía, que indica el proceso de instalación.. Puntos importantes:
+
+* Conectarse como root.
+* Estar conectado a internet. (Hay dos conexiones, la de antes es la que conecta a internet y la otra es para conectar a los nodos)
+* Ahora el hue está disponible para descarga [en el repositorio de github](https://github.com/cloudera/hue/releases), no en la página de hue. En mi caso me he descargado la 4.10.
+* La compilación tardará un rato. Iros a echarse un café si la máquina no es muy rápida.
+
+1. Lo primero que hay que hacer es instalar, **una a una**, **TODAS** las dependencias que pone en la lista. En nuestro caso, al usar CentOS 7, instalaremos las de la columna "Redhat".
+
+2. Después, ejecutamos `curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -`. Esto no sé muy bien lo que hace, luego lo pongo.
+
+3. Ahora hay que instalar npm y nodejs (incluido con npm), justo a continuación (esto no lo pone en la guía porque no sé).
+
+4. A continuación, realizamos una compilación (debemos cambiar la carpeta que pone ahí por /opt/hadoop): `PREFIX=/opt/hadoop make install`
+
+Ahora pasamos a la configuración.
+
+### Configuración
+
+Hay que cambiar un par de cosas en un par de archivos.
+
+* En *hdfs-site.xml* hay que añadir la siguiente propiedad:
+```
+<property>
+  <name>dfs.webhdfs.enabled</name>
+  <value>true</value>
+</property>
+```
+
+* En *core-site.xml* hay que añadir las siguientes propiedades:
+```
+<property>
+  <name>hadoop.proxyuser.hue.hosts</name>
+  <value>*</value>
+</property>
+<property>
+  <name>hadoop.proxyuser.hue.groups</name>
+  <value>*</value>
+</property>
+```
