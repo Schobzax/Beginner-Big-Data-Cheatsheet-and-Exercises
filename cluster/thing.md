@@ -788,7 +788,7 @@ Por último, y pasando un poco de las comprobaciones (lo dejo al lector que debe
 ## 30. Beeline
 Lo primero que tenemos que hacer antes de empezar a trabajar con beeline es modificar una propiedad muy concreta de beeline para poder realizar ejecuciones "anónimas". Tenemos que dirigirnos al fichero `/opt/hadoop/hive/conf/hive-site.xml` y cambiar la propiedad "hive.server2.enable.doAs" por "false".
 
-**Tercer error: A mí me ha salido aleatoriamente. No sé muy bien por qué funciona o por qué deja de funcionar.**
+**Tercer error: A mí me ha salido aleatoriamente. No sé muy bien por qué funciona o por qué deja de funcionar. *Temas raros de puertos, supongo.***
 
 ### El ejercicio de deslizamientos de tierra
 Pues ya es cuestión de hacerlo. Ahí no me voy a meter, se deja como ejercicio para el lector.
@@ -797,44 +797,35 @@ Sí debo advertir que la ultimísima parte de Excel no funciona del todo correct
 
 ## 31. Hue
 
-### Instalación
-Seguir paso a paso esta guía, que indica el proceso de instalación.. Puntos importantes:
+No funciona. Siguiente.
 
-* Conectarse como root.
-* Estar conectado a internet. (Hay dos conexiones, la de antes es la que conecta a internet y la otra es para conectar a los nodos)
-* Ahora el hue está disponible para descarga [en el repositorio de github](https://github.com/cloudera/hue/releases), no en la página de hue. En mi caso me he descargado la 4.10.
-* La compilación tardará un rato. Iros a echarse un café si la máquina no es muy rápida.
+## 32. Sqoop
 
-1. Lo primero que hay que hacer es instalar, **una a una**, **TODAS** las dependencias que pone en la lista. En nuestro caso, al usar CentOS 7, instalaremos las de la columna "Redhat".
+Sqoop básicamente nos permite transferir información de bases de datos relacionales a hdfs, y viceversa.
 
-2. Después, ejecutamos `curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -`. Esto no sé muy bien lo que hace, luego lo pongo.
+Usaremos la versión descargada desde [esta página](http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz). Preveo que me va a dar muchos problemas, pero aquí hemos venido a jugar, órdago a la grande y me quedo con mi caja.
 
-3. Ahora hay que instalar npm y nodejs (incluido con npm), justo a continuación (esto no lo pone en la guía porque no sé).
+Una vez descargada, nos dirigimos a la carpeta `/opt/hadoop`, descomprimimos el archivo con `tar xvf /home/hadoop/Descargas/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz` y lo renombramos la carpeta con `mv sqoop-1.4.7.bin__hadoop-2.6.0/ sqoop/`.
 
-4. A continuación, realizamos una compilación (debemos cambiar la carpeta que pone ahí por /opt/hadoop): `PREFIX=/opt/hadoop make install`
+Ahora hay que editar el archivo .bashrc, añadiendo la variable `export SQOOP_HOME=/opt/hadoop/sqoop` y el `:$SQOOP_HOME/bin` añadido al $PATH.
 
-Ahora pasamos a la configuración.
+### Configuración de Sqoop
+Nos dirigimos al directorio /opt/hadoop/sqoop/conf, y generamos un archivo a partir de plantilla con `cp sqoop-env-template.sh sqoop-env.sh`.
 
-### Configuración
+En ese tenemos que cambiar estas líneas, añadiéndoles la ruta:
+* `export HADOOP_COMMON_HOME=/opt/hadoop`
+* `export HADOOP_MAPRED_HOME=/opt/hadoop`
+* `export HIVE_HOME=/opt/hadoop/hive`
 
-Hay que cambiar un par de cosas en un par de archivos.
+Reiniciar la consola para que los cambios de .bashrc tengan efecto, si no lo has hecho antes (cerrar y abrir).
 
-* En *hdfs-site.xml* hay que añadir la siguiente propiedad:
-```
-<property>
-  <name>dfs.webhdfs.enabled</name>
-  <value>true</value>
-</property>
-```
+Ahora al ejecutar `sqoop-version` nos saldrán mensajes de error de cosas que no tenemos instaladas pero por lo demás todo bien
 
-* En *core-site.xml* hay que añadir las siguientes propiedades:
-```
-<property>
-  <name>hadoop.proxyuser.hue.hosts</name>
-  <value>*</value>
-</property>
-<property>
-  <name>hadoop.proxyuser.hue.groups</name>
-  <value>*</value>
-</property>
-```
+En cuanto a la ejecución no se verá en este documento porque a) está centrado en temas de configuración de clúster y b) ya hemos usado sqoop anteriormente.
+
+### Oracle Express
+[Sería muy conveniente seguir esta guía.](https://oraxedatabase.blogspot.com/2020/04/como-instalar-oracle-database-20c.html)
+
+Y luego para que el sqoop funcione hay que tener instalado `commons-lang-2.6.jar` y `ojdbc8.jar`, en la carpeta /opt/hadoop/sqoop/lib. **Importante**.
+
+Como prueba de funcionamiento, ejecutamos `sqoop-import --connect jdbc:oracle:thin:@nodo1:1521:XE --username HR --password HR --table DEPARTMENTS --target-dir /empleados --as-textfile`. No funciona. Me da error de conexión. Me pego un tiro. Fallo. Me pego otro tiro. Vuelvo a fallar. Error de conexión. Intento arreglarlo. No lo consigo. Me pego otro fallo. Esta vez vuelvo a fallar. Repita *ad nauseam*.
