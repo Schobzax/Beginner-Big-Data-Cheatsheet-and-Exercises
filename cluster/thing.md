@@ -823,9 +823,141 @@ Ahora al ejecutar `sqoop-version` nos saldrán mensajes de error de cosas que no
 
 En cuanto a la ejecución no se verá en este documento porque a) está centrado en temas de configuración de clúster y b) ya hemos usado sqoop anteriormente.
 
+Lo de Oracle no funciona. Pasamos a otra cosa.
+<!--
 ### Oracle Express
+[He seguido esta guía](https://oracle-base.com/articles/21c/oracle-db-21c-xe-rpm-installation-on-oracle-linux-7-and-8), referente a la parte de RHEL 7.
+
+**Error no se qué Lang** https://mvnrepository.com/artifact/commons-lang/commons-lang/2.6
+
+// OLD
 [Sería muy conveniente seguir esta guía.](https://oraxedatabase.blogspot.com/2020/04/como-instalar-oracle-database-20c.html)
 
 Y luego para que el sqoop funcione hay que tener instalado `commons-lang-2.6.jar` y `ojdbc8.jar`, en la carpeta /opt/hadoop/sqoop/lib. **Importante**.
 
 Como prueba de funcionamiento, ejecutamos `sqoop-import --connect jdbc:oracle:thin:@nodo1:1521:XE --username HR --password HR --table DEPARTMENTS --target-dir /empleados --as-textfile`. No funciona. Me da error de conexión. Me pego un tiro. Fallo. Me pego otro tiro. Vuelvo a fallar. Error de conexión. Intento arreglarlo. No lo consigo. Me pego otro fallo. Esta vez vuelvo a fallar. Repita *ad nauseam*.
+
+VALE! La solución es no generar el usuario HR:HR y hacerlo directamente desde root. NO es la solución, pero eh. Ahí está la cosa.
+
+Efectivamente, no era la solución.
+-->
+## 33. ZooKeeper
+Seguir la guía y vídeos del curso. Hay que hacer `scp` a todo lo que modifiquemos.
+
+En este momento por problemas de configuración he borrado el nodo1 y lo he recreado a partir del nodo2, porque estoy hasta las narices.
+
+Luego lo he borrado para descargarme la versión correcta, que no es la última sino la que dice en la guía; borrando cualquier rastro de todo después del punto 30.
+
+Lo que hay que hacer en este caso es seguir la guía, habiéndose descargado exactamente la versión que se usa en el curso, que es la 3.4.11.
+
+# 34. Spark
+Esto ya lo conocemos. Debido a conflictos con Zookeeper, se revierte a una versión pre-Zookeeper.
+
+* Importante descargarse la versión con hadoop "provisto por el usuario" (es decir, que venga sin hadoop adjunto).
+
+Después del procedimiento habitual (rpm en /opt/hadoop y mv carpeta para renombrarla) ya visto en herramientas anteriores, modificamos el .bashrc añadiéndole dos variables:
+
+* `export SPARK_DIST_CLASSPATH=$(hadoop classpath)`
+* `export SPARK_HOME=/opt/hadoop/spark`
+* `export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin`
+* `export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop`
+
+**Si te aparece un error del tipo `Error initializing SparkContext`, comprueba que la conexión en la que estás es la que está configurada para el clúster.**
+
+**Si te aparece un error al cargar pyspark del tipo 'python3' no se reconoce comando, es que tienes que instalar python3. Lo mejor es hacerlo mediante yum.**
+
+Luego, para el ejemplo de los puertos.csv, hay que ejecutar los siguientes comandos:
+```
+$ hdfs dfs -mkdir /spark
+$ hdfs dfs -put /home/hadoop/puertos.csv /spark
+$ spark-shell
+scala> val v1 = sc.textFile("/spark/puertos.csv")
+```
+
+Y bueno luego ejecutar las cosas.
+
+El programa python da un fallo de lectura de python3 o no sé qué historia.
+
+### Modo Standalone
+Para este hay que descargarse el paquete en el que va incluido hadoop. En mi caso, `spark-3.2.1-bin-hadoop3.2.tgz`. Por ejemplo lo vamos a hacer en la carpeta `/home/hadoop/spark_standalone` y tal.
+
+* Nuevamente tenemos que hacer el mv para cambiar de nombre a la carpeta.
+* Después arrancamos `start-master.sh`, que está en sbin en la carpeta que hayamos creado. Esto nos crea una interfaz web accesible mediante 8080. Ahí dice que está escuchando el nodo1 por el puerto 7077.
+* Así que ahora arrancamos `start-slave.sh nodo1:7077`.
+
+Para acceder a la shell de esta versión concreta lo hacemos desde `bin/spark-shell`
+
+# 35. HBase
+Procedimiento habitual. Instalamos el paquete. Yo me he instalado la versión 2.4.12. En /opt/hadoop/hbase.
+
+Editamos `/opt/hadoop/hbase/conf/hbase-site.xml`, el cual NO está vacío, y colocamos lo siguiente, manteniendo lo que ya haya y se corresponda:
+```
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>hbase.tmp.dir</name>
+    <value>./tmp</value>
+  </property>
+  <property>
+    <name>hbase.rootdir</name>
+    <value>file:///opt/hadoop/hbase/data/hbase</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>/opt/hadoop/hbase/data/hbase</value>
+  </property>
+  <property>
+    <name>hbase.unsafe.stream.capability.enforce</name>
+    <value>false</value>
+  </property>
+```
+
+Y luego, localizado en bin, ejecutamos `./start-hbase.sh`
+
+Podemos también añadir HBASE_HOME al PATH tal cual lo hemos hecho en ocasiones anteriores.
+
+Ahora lo que hay que hacer es juguetear con los comandos de HBase.
+
+Una nota quizá de cierta importancia es el uso del comando `put`, que hace las veces de INSERT y de UPDATE también.
+
+### Semidistribuido 
+Para esto tenemos que realizar una instalación semidistribuida de HBase.
+
+1. Modificar el archivo hbase-site.xml que ya hemos modificado antes.
+
+```
+<property>
+  <name>hbase.cluster.distributed</name>
+  <value>true</value>
+</property>
+
+<property>
+  <name>hbase.rootdir</name>
+  <value>hdfs://nodo1:9000/hbase</value>
+</property>
+
+<property>
+  <name>hbase.zookeeper.quorum</name>
+  <value>nodo1,nodo2,nodo3</value>
+</property>
+```
+
+2. En el archivo hbase-env.sh hay que modificar lo siguiente.
+```
+# Tell HBase whether it should manage it's own instance of ZooKeeper or not.
+export HBASE_MANAGES_ZK=false
+export HBASE_DISABLE_HADOOP_CLASSPATH_LOOKUP=true
+```
+
+Sigue sin funcionar, así que pasamos del tema.
+
+## 36. Ambari
+Por lo visto ha sido retirado al ático. Igualmente lo vamos a hacer, pero parecía tanto y resulta que ahora no vale de nada.
+
+Vamos a ir directos a por la versión 2.2.1, que es la versión que se usa en la guía. La instalación de la última versión difiere lo suficiente, tanto es así que tan solo está la opción de compilar la fuente. O yo no he encontrado la opción de cliente binario o como sea.
+
+**Error 403 Forbidden**
+
+Pues me cago en la leche. Por lo visto Cloudera ha pasado a repositorios privados para Cloudera y HDP (que no sé lo que es, pero me lo imagino) y hacen falta credenciales. Por eso da acceso forbidden. Voy a limitarme a ver los vídeos, y después buscaré una guía.
