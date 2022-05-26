@@ -47,7 +47,7 @@ $ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic topic_app
 * **Crear 2 consumer que forman parte de un grupo de consumo llamado "my_app".**
 En una segunda y tercera terminales:
 ```
-$ kafka-console.consumer.sh --bootstrap-server 127.0.0.1:9092 --topic topic_app --group my_app
+$ kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic topic_app --group my_app
 ```
 * **Interactuar con los 3 elementos creando mensajes en el producer y visualizar como estos son consumidos por los consumer.**
 
@@ -75,7 +75,7 @@ Topic:topic_app PartitionCount:3        ReplicationFactor:1     Configs:
         Topic: topic_app        Partition: 1    Leader: 0       Replicas: 0     Isr: 0
         Topic: topic_app        Partition: 2    Leader: 0       Replicas: 0     Isr: 0
 # Descripción de grupos de consumo
-$ kafka-consumer-groups.sh --bootstrap.server 127.0.0.1:9092 --describe --group my_app
+$ kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --describe --group my_app
 TOPIC       PARTITION   CURRENT-OFFSET  LOG-END-OFFSET  LAG     CONSUMER-ID                                         HOST            CLIENT-ID
 topic_app   0           8               8               0       consumer-1-a6fd5a53-c858-413a-b780-5909918ec512     /127.0.0.1          consumer-1
 topic_app   1           7               7               0       consumer-1-a6fd5a53-c858-413a-b780-5909918ec512     /127.0.0.1          consumer-1
