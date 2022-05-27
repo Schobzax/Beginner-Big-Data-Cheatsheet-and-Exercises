@@ -26,3 +26,36 @@ Han de estar activos Zookeeper y Kafka Server:
 * Listar grupos de consumidores (si te fijas no le ponemos nombre al consumidor): `kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --list`
 * Describir grupo de consumidores: `kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --describe --group <grupo>`
   * `<grupo>` es el nombre de un grupo de consumidores.
+
+## Presto
+* `bin/launcher start`, `bin/launcher stop` para iniciarlo y pararlo.
+
+### Agregar una tabla
+Para agregar una tabla con datos, hay que seguir los siguientes pasos:
+1. Se crea un topic, de nombre `topico`, por ejemplo.
+2. Se crea un producer asociado y se insertan datos.
+3. Se ha de crear un documento y modificar otro:
+   1. Modificamos el documento `etc/catalog/kafka-properties` y en la propiedad `kafka.table-names` añadimos el nombre del tópico que queremos consultar.
+   2. Creamos un documento en `etc/kafka/` cuyo nombre sea `topico.json`, con el siguiente contenido:
+
+```
+{
+  "tableName":"topico",
+  "topicName":"topico",
+  "schemaName":"default", // Esto es por el schema que se está usando en presto.
+  "message": {
+    "dataFormat": "json",
+    "fields": [
+      {
+        "name":"campo1",
+        "mapping":"campo1",
+        "type": el tipo que sea el campo
+      },
+      {
+        otro campo, y así sucesivamente
+      }
+    ]
+  }
+}
+```
+Es un fichero JSON con el schema de la tabla. *Nótese que no se pueden poner comentarios, están ahí a modo explicativo.*
