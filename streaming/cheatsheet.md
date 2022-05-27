@@ -2,6 +2,7 @@
 
 ## Configuración inicial
 Han de estar activos Zookeeper y Kafka Server:
+* `cd kafka_2.11-2.1.0/`
 * `zookeeper-server-start.sh config/zookeeper.properties`
 * `kafka-server-start.sh config/server.properties`
 
@@ -59,3 +60,6 @@ Para agregar una tabla con datos, hay que seguir los siguientes pasos:
 }
 ```
 Es un fichero JSON con el schema de la tabla. *Nótese que no se pueden poner comentarios, están ahí a modo explicativo.*
+
+### CLI
+* El cliente se lanza desde `$HOME` ejecutando `./presto --catalog kafka --schema default`.
