@@ -21,9 +21,10 @@ Han de estar activos Zookeeper y Kafka Server:
   * `<nombre>` es el nombre de un tópico existente.
 
 ## Consumidores
-* Crear consumidor: `kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic <nombre> --group <grupo>`
+* Crear consumidor: `kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic <nombre> [--group <grupo>][--from-beginning]`
   * `<nombre>` es el nombre de un tópico existente.
   * `<grupo>` es el nombre de un grupo de consumidores (existente o no).
+  * `--from-beginning` si quieres que se muestren todos los mensajes desde el principio (sujeto a condiciones: mismo grupo, tópico, que no se hayan leído ya, etcétera)
 * Listar grupos de consumidores (si te fijas no le ponemos nombre al consumidor): `kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --list`
 * Describir grupo de consumidores: `kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --describe --group <grupo>`
   * `<grupo>` es el nombre de un grupo de consumidores.
@@ -36,7 +37,7 @@ Para agregar una tabla con datos, hay que seguir los siguientes pasos:
 1. Se crea un topic, de nombre `topico`, por ejemplo.
 2. Se crea un producer asociado y se insertan datos.
 3. Se ha de crear un documento y modificar otro:
-   1. Modificamos el documento `etc/catalog/kafka-properties` y en la propiedad `kafka.table-names` añadimos el nombre del tópico que queremos consultar.
+   1. Modificamos el documento `etc/catalog/kafka.properties` y en la propiedad `kafka.table-names` añadimos el nombre del tópico que queremos consultar.
    2. Creamos un documento en `etc/kafka/` cuyo nombre sea `topico.json`, con el siguiente contenido:
 
 ```
